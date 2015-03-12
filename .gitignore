@@ -1,0 +1,11 @@
+codegentemp
+Generated_Source
+CortexM3
+CortexM0
+Export
+*.rpt
+*.html
+*.svd
+*.cyfit
+*.Administrator
+*.chuck.erhardt
