@@ -60,6 +60,39 @@
 #define W5500_KPALVTR             ( 0x002F )
 
 /*
+ * W5500 COmmands
+ */
+#define W5500_CMD_OPEN            ( 0x01 )
+#define W5500_CMD_LISTEN          ( 0x02 )
+#define W5500_CMD_CONNECT         ( 0x04 )
+#define W5500_CMD_DISCON          ( 0x08 )
+#define W5500_CMD_CLOSE           ( 0x10 )
+#define W5500_CMD_SEND            ( 0x20 )
+#define W5500_CMD_SEND_MAC        ( 0x21 )
+#define W5500_CMD_SEND_KEEP       ( 0x22 )
+#define W5500_CMD_RECV            ( 0x40 )
+
+/*
+ * W5500 Interrupt Flags
+ */
+#define W5500_IR_CON              ( 0x01 )
+#define W5500_IR_DISCON           ( 0x02 )
+#define W5500_IR_RECV             ( 0x04 )
+#define W5500_IR_TIMEOUT          ( 0x08 )
+#define W5500_IR_SEND_OK          ( 0x10 )
+
+/*
+ * Socket Status
+ */
+#define W5500_SOCK_CLOSED         ( 0x00 )
+#define W5500_SOCK_INIT           ( 0x13 )
+#define W5500_SOCK_LISTEN         ( 0x14 )
+#define W5500_SOCK_ESTABLISHED    ( 0x17 )
+#define W5500_SOCK_CLOSE_WAIT     ( 0x1C )
+#define W5500_SOCK_UDP            ( 0x22 )
+#define W5500_SOCK_MACRAW         ( 0x42 )
+
+/*
  * timeout used to prevent command acceptance deadlock
  */
 #define W5500_CMD_TIMEOUT         ( 125 )
@@ -238,7 +271,7 @@ uint8 w5500_bSendControlReg( uint16 adr, uint8 value, uint8 write)
 uint16 w5500_wSendControlReg( uint16 adr, uint16 value, uint8 write)
 {
 	value = CYSWAP_ENDIAN16( value );
-	w5500_Send(adr,W5500_BLOCK_COMMON,write,(uint8)&value,2);
+	w5500_Send(adr,W5500_BLOCK_COMMON,write,(uint8*)&value,2);
 	value = CYSWAP_ENDIAN16( value );
 	return value;
 }
@@ -278,7 +311,7 @@ uint8 w5500_ExecuteSocketCommand(uint8 socket, uint8 cmd )
 }
 /* ======================================================================== */
 /* End Section */
-#endif
+
 /**
  * \brief Initialize the W5500 with the default settings configured in Creator
  * 
@@ -319,7 +352,7 @@ void w5500_StartEx( w5500_config *config )
 		w5500_ChipInfo.socketStatus[socket] = W5500_SOCKET_AVAILALE;
 	}
 	/* Build gateway address ppacket */
-	w5500_ChipInfo.Gateway = IOT_ParseIP(config->gateway[0]);
+	w5500_ChipInfo.Gateway = IOT_ParseIP(config->gateway);
 	w5500_ChipInfo.subnet = IOT_ParseIP(config->subnet);
 	IOT_ParseMAC(config->mac, &w5500_ChipInfo.MAC[0] );
 	w5500_ChipInfo.ip = IOT_ParseIP(config->ip);
@@ -390,6 +423,10 @@ uint8 w5500_SocketOpen( uint8 flags )
 	 */
 	w5500_ChipInfo.socketStatus[socket] = W5500_SOCKET_OPEN;
 	w5500_Send( W5500_SREG_MR, w5500_socket_reg[socket], 1, &flags, 1);
+	/*
+	 * Initialize memory pointers for the W5500 device
+	 */
+	
 	
 	/*
 	 * execute the open command, and check the result.  If the result
@@ -401,7 +438,84 @@ uint8 w5500_SocketOpen( uint8 flags )
 		w5500_ChipInfo.socketStatus[socket] = W5500_SOCKET_AVAILALE;
 		socket = 0xFF;
 	}
-	
 	return socket;
 }
+/* ------------------------------------------------------------------------- */
+/**
+ * \brief Close an open socket
+ * \param sock (uint8) the socket number to close
+ *
+ * _SocketClose closes an open socket connection optionally sending the
+ * disconnection sequence.  After the command, the socket allocation is
+ * cleared.
+ *
+ * \sa w500_SocketDisconnect
+ */
+uint8 w5500_SocketClose( uint8 sock, uint8 discon )
+{
+	uint8 status;
+	
+	/* Ignore close requests for sockets that are not open */
+	if (w5500_ChipInfo.socketStatus[sock] == W5500_SOCKET_AVAILALE) return 0xFF;
+	
+	/*
+	 * first read the status of the socket from the W5500, and return with an
+	 * error code if the socket is already closed.
+	 */
+	w5500_Send(W5500_SREG_SR, w5500_socket_reg[sock],0,&status,1);
+	if (status == W5500_SOCK_CLOSED) {
+		w5500_ChipInfo.socketStatus[sock] = W5500_SOCKET_AVAILALE;
+		return 0xFF;
+	}
+	
+	/*
+	 * the socket was allocated and also in a state that is not already closed,
+	 * so issue the close command to the device to terminate the connection
+	 */
+	status = w5500_ExecuteSocketCommand( sock, (discon!=0)?W5500_CMD_DISCON:W5500_CMD_CLOSE );
+	
+	if (status == 0 ) {
+		w5500_ChipInfo.socketStatus[sock] = W5500_SOCKET_AVAILALE;
+	}
+	
+	return status;
+}
+/* ------------------------------------------------------------------------ */
+/**
+ * \brief Close a socket and send the termination sequence to an open connection
+ * \param sock (uint8) The socket number to colose
+ * \returns 0 successful closure of the socket
+ * \returns 0xFF socket was already closed, or not allocated
+ * \retutns uint8 value indicating faulure of the discon command execution
+ */
+uint8 w5500_SocketDisconnect( uint8 sock )
+{
+	return w5500_SocketClose( sock, 1);
+}
+/* ------------------------------------------------------------------------ */
+/**
+ * \brief Read the status of the socket and check to see if a connection is established
+ * \param sock (uint8) the socket number to which status shoudl be checked
+ * \returns 0 Socket is not yet established
+ * \returns 0xFF Socket is not open
+ * \returns uint8 Non-Zero, Non-FF value indicating the socket is established
+ */
+uint8 w5500_SocketEstablished( uint8 sock )
+{
+	uint8 status;
+	
+	if (w5500_ChipInfo.socketStatus[sock] == W5500_SOCKET_AVAILALE) {
+		return 0xFF;
+	}
+	
+	w5500_Send(W5500_SREG_SR,w5500_socket_reg[sock],0,&status, 1);
+	
+	return ((status == W5500_SOCK_ESTABLISHED)?0x13:0);
+}
+/* ------------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------ */
+	
 /* [] END OF FILE */
