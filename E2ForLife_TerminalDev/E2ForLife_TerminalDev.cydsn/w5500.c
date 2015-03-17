@@ -133,10 +133,20 @@ const uint8 w5500_socket_rx[8] = {
 	W5500_BLOCK_S7_RXB
 };
 /* ------------------------------------------------------------------------ */
+const w5500_config w5500_default = {
+	"192.168.1.1",
+	"255.255.255.0",
+	"00-DE-AD-BE-EF-00",
+	"192.168.1.101",
+	0
+};
+
+/* ------------------------------------------------------------------------ */
 #define W5500_SOCKET_OPEN           ( 1 )
 #define W5500_SOCKET_AVAILALE       ( 0 )
 
 uint8 w5500_SOCKET_TABLE[8];
+w5500_info w5500_ChipInfo;
 
 /* ------------------------------------------------------------------------ */
 /**
@@ -269,14 +279,33 @@ uint8 w5500_ExecuteSocketCommand(uint8 socket, uint8 cmd )
 /* ======================================================================== */
 /* End Section */
 #endif
+/**
+ * \brief Initialize the W5500 with the default settings configured in Creator
+ * 
+ * This function calls the StartEx function to configure the W550 device using
+ * the default setting as setup by the user in the configuration dialog in the
+ * Creator tools.
+ */
 void w5500_Start( void )
+{
+	w5500_StartEx( &w5500_default );
+}
+/* ------------------------------------------------------------------------ */
+/**
+ * \brief configure the W5500 with user settings
+ * \param config the Configuration for the W5500 device
+ * 
+ * This function converts the configuration in to the for useable by the W5500
+ * and builds a burst data buffer to transfer to the W5500.  the configuration
+ * paramters are stored in the _ChipInfo struct for later use by the driver
+ * with no conversions required.
+ */
+void w5500_StartEx( w5500_config *config )
 {
 	int socket;
 	uint8 chip_config[18];
-	uint32 ip;
 	uint8* pip;
 	
-	pip = (uint8*)&ip;
 	/*
 	 * issue a mode register reset to the W5500 in order to set default
 	 * register contents for the chip.
@@ -287,23 +316,31 @@ void w5500_Start( void )
 	 * configuration dialog
 	 */
 	for (socket = 0; socket < 8; ++socket) {
-		w5500_SOCKET_TABLE[ socket ] = W5500_SOCKET_AVAILALE;
+		w5500_ChipInfo.socketStatus[socket] = W5500_SOCKET_AVAILALE;
 	}
 	/* Build gateway address ppacket */
-	ip = IOT_ParseIP("192.168.1.1");
+	w5500_ChipInfo.Gateway = IOT_ParseIP(config->gateway[0]);
+	w5500_ChipInfo.subnet = IOT_ParseIP(config->subnet);
+	IOT_ParseMAC(config->mac, &w5500_ChipInfo.MAC[0] );
+	w5500_ChipInfo.ip = IOT_ParseIP(config->ip);
+	
+	pip = (uint8*)&w5500_ChipInfo.Gateway;
 	chip_config[0] = pip[0];
 	chip_config[1] = pip[1];
 	chip_config[2] = pip[2];
 	chip_config[3] = pip[3];
-	/* DEfault subnet mask */
-	chip_config[4] = 0xFF;
-	chip_config[5] = 0xFF;
-	chip_config[6] = 0xFF;
-	chip_config[7] = 0;
+	/* Default subnet mask */
+	pip = (uint8*)&w5500_ChipInfo.subnet;
+	chip_config[4] = pip[0];
+	chip_config[5] = pip[1];
+	chip_config[6] = pip[2];
+	chip_config[7] = pip[3];
 	/* Default hardware address */
-	IOT_ParseMAC("00-DE-AD-BE-EF-00", &chip_config[8] );
+	for (socket = 0;socket<6;++socket) {
+		chip_config[8+socket] = w5500_ChipInfo.MAC[socket];
+	}
 	/* Default fixed IP address for the chip */
-	ip = IOT_ParseIP("192.168.1.101");
+	pip = (uint8*) &w5500_ChipInfo.ip;
 	chip_config[14] = pip[0];
 	chip_config[15] = pip[1];
 	chip_config[16] = pip[2];
@@ -312,4 +349,59 @@ void w5500_Start( void )
 	w5500_Send(W5500_REG_GAR,W5500_BLOCK_COMMON,1,&chip_config[0], 18);	
 }
 /* ------------------------------------------------------------------------ */
+uint8 w5500_SocketOpen( uint8 flags )
+{
+	uint8 socket;
+	int idx;
+	
+	/* default the socket to the error condition */
+	socket = 0xFF;
+	/* 
+	 * If the MACRAW protocol was selected, make sure that socket 0 is
+	 * available, otherwise flag an error and kick back to the user
+	 */
+	if ( (flags & W5500_PROTO_MACRAW) != 0) {
+		if (w5500_ChipInfo.socketStatus[0] != W5500_SOCKET_AVAILALE) {
+			return 0xFF;
+		}
+		else {
+			socket = 0;
+		}
+	}
+	else {
+		/*
+		 * scan the other sockets, starting at 1 (0 is ignore to support the
+		 * MACRAW mode of operation) and look for the first available socket.
+		 * once there is a socket available, exit the loop and store the socket
+		 * id in the socket number.
+		 */
+		idx = 1;
+		while ( (idx <7) && (w5500_ChipInfo.socketStatus[idx] == W5500_SOCKET_OPEN) ) {
+			++idx;
+		}
+		if (w5500_ChipInfo.socketStatus[idx] == W5500_SOCKET_OPEN) {
+			return 0xFF;
+		}
+		socket = idx;
+	}
+	/*
+	 * Now that the socket is identified, declare it as open, then set the mode
+	 * register and issue the socket open command
+	 */
+	w5500_ChipInfo.socketStatus[socket] = W5500_SOCKET_OPEN;
+	w5500_Send( W5500_SREG_MR, w5500_socket_reg[socket], 1, &flags, 1);
+	
+	/*
+	 * execute the open command, and check the result.  If the result
+	 * was not 0, there was an error in the command, so set the socket
+	 * as available, and return 0xFF error socket to safely exit the error
+	 * condition.
+	 */
+	if (w5500_ExecuteSocketCommand(W5500_CMD_OPEN, socket) != 0) {
+		w5500_ChipInfo.socketStatus[socket] = W5500_SOCKET_AVAILALE;
+		socket = 0xFF;
+	}
+	
+	return socket;
+}
 /* [] END OF FILE */
