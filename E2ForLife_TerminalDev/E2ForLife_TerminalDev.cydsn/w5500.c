@@ -382,7 +382,7 @@ void w5500_StartEx( w5500_config *config )
 	w5500_Send(W5500_REG_GAR,W5500_BLOCK_COMMON,1,&chip_config[0], 18);	
 }
 /* ------------------------------------------------------------------------ */
-uint8 w5500_SocketOpen( uint8 flags )
+uint8 w5500_SocketOpen( uint16 port, uint8 flags )
 {
 	uint8 socket;
 	int idx;
@@ -426,7 +426,8 @@ uint8 w5500_SocketOpen( uint8 flags )
 	/*
 	 * Initialize memory pointers for the W5500 device
 	 */
-	
+	port = CYSWAP_ENDIAN16(port);
+	w5500_Send( W5500_SREG_PORT, w5500_socket_reg[socket], 1. &port, 2);
 	
 	/*
 	 * execute the open command, and check the result.  If the result
@@ -513,7 +514,33 @@ uint8 w5500_SocketEstablished( uint8 sock )
 	return ((status == W5500_SOCK_ESTABLISHED)?0x13:0);
 }
 /* ------------------------------------------------------------------------ */
-
+/**
+ * \brief Open a socket and set protocol to TCP mode
+ * \param port (uint16) the port number on which to open the socket
+ * \returns 0xFF Unable to open the socket
+ * \returns uint8 socket number allocated for this socket
+ *
+ *
+ */
+uint8 w5500_TcpStart( uint16 port )
+{
+	uint8 socket;
+	
+	/* open the socket using the TCP mode */
+	socket = w5500_SocketOpen( W5500_PROTO_TCP );
+	if (socket != 0xFF) {
+		/*
+		 * Swap the bytes in the word to fix the little/big endian differences
+		 * between the processor and the W5500.
+		 */
+		port = CYSWAP_ENDIAN16( port );
+		/*
+		 * write the source port register of the W5500 to set the port for the
+		 * TCP connection.
+		 */
+		w5500_Send(W5500_SREG_PORT,w5500_socket_reg[socket],1,&port,2);
+	}
+}
 /* ------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------ */
