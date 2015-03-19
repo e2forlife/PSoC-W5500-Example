@@ -30,6 +30,7 @@ typedef struct {
 	uint8 socketStatus[8];
 } w5500_info;
 
+
 #define W5500_FLG_SKT_UDP_MULTICAST_ENABLE       ( 0x80 )
 #define W5500_FLG_SKT_MACRAW_MAC_FILT_ENABLE     ( 0x80 )
 #define W5500_FLG_SKT_BLOCK_BROADCAST            ( 0x40 )

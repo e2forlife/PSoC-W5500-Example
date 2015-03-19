@@ -178,7 +178,6 @@ const w5500_config w5500_default = {
 #define W5500_SOCKET_OPEN           ( 1 )
 #define W5500_SOCKET_AVAILALE       ( 0 )
 
-uint8 w5500_SOCKET_TABLE[8];
 w5500_info w5500_ChipInfo;
 
 /* ------------------------------------------------------------------------ */
@@ -321,7 +320,7 @@ uint8 w5500_ExecuteSocketCommand(uint8 socket, uint8 cmd )
  */
 void w5500_Start( void )
 {
-	w5500_StartEx( &w5500_default );
+	w5500_StartEx( (w5500_config*)&w5500_default );
 }
 /* ------------------------------------------------------------------------ */
 /**
@@ -338,6 +337,7 @@ void w5500_StartEx( w5500_config *config )
 	int socket;
 	uint8 chip_config[18];
 	uint8* pip;
+	uint8 socket_cfg[14] = { 2, 2, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	
 	/*
 	 * issue a mode register reset to the W5500 in order to set default
@@ -350,6 +350,8 @@ void w5500_StartEx( w5500_config *config )
 	 */
 	for (socket = 0; socket < 8; ++socket) {
 		w5500_ChipInfo.socketStatus[socket] = W5500_SOCKET_AVAILALE;
+		/* Send socket register setup to the chip */
+		w5500_Send( W5500_SREG_RXBUF_SIZE, w5500_socket_reg[socket], 1, &socket_cfg[0], 14);
 	}
 	/* Build gateway address ppacket */
 	w5500_ChipInfo.Gateway = IOT_ParseIP(config->gateway);
@@ -382,10 +384,11 @@ void w5500_StartEx( w5500_config *config )
 	w5500_Send(W5500_REG_GAR,W5500_BLOCK_COMMON,1,&chip_config[0], 18);	
 }
 /* ------------------------------------------------------------------------ */
-uint8 w5500_SocketOpen( uint16 port, uint8 flags )
+uint8 w5500_SocketOpen( uint16 port, uint8 flags, uint8 tx_size, uint8 rx_size )
 {
 	uint8 socket;
 	int idx;
+	uint8 zero[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	
 	/* default the socket to the error condition */
 	socket = 0xFF;
@@ -427,7 +430,23 @@ uint8 w5500_SocketOpen( uint16 port, uint8 flags )
 	 * Initialize memory pointers for the W5500 device
 	 */
 	port = CYSWAP_ENDIAN16(port);
-	w5500_Send( W5500_SREG_PORT, w5500_socket_reg[socket], 1. &port, 2);
+	w5500_Send( W5500_SREG_PORT, w5500_socket_reg[socket], 1, (uint8*)&port, 2);
+	/*
+	 * Defualt the memory size for the Tx/Rx memory to 2K each to support
+	 * the maximum number of sockets supported by the W5500.
+	 * TODO: Add support for the tx_size and rx_size parameters to allocate
+	 * socket buffer memory
+	 */
+	tx_size = 2; // avoid warnings and fix mem sizes to 2 K each
+	rx_size = 2;
+	w5500_Send( W5500_SREG_TXBUF_SIZE, w5500_socket_reg[socket], 1, &tx_size, 1);
+	w5500_Send( W5500_SREG_RXBUF_SIZE, w5500_socket_reg[socket], 1, &rx_size, 1);
+	/*
+	 * Memory sizes are set, now initialize the memory pointers to flush the
+	 * FIFO data.
+	 */
+	w5500_Send( W5500_SREG_TX_RD, w5500_socket_reg[socket], 1, &zero[0], 4);
+	w5500_Send( W5500_SREG_RX_RD, w5500_socket_reg[socket], 1, &zero[0], 4);
 	
 	/*
 	 * execute the open command, and check the result.  If the result
@@ -455,7 +474,12 @@ uint8 w5500_SocketOpen( uint16 port, uint8 flags )
 uint8 w5500_SocketClose( uint8 sock, uint8 discon )
 {
 	uint8 status;
+	uint8 ir;
 	
+	ir = 0xFF;
+	
+	/* Trap socket invalid handle errors */
+	if (sock > 7) return 0xFF;
 	/* Ignore close requests for sockets that are not open */
 	if (w5500_ChipInfo.socketStatus[sock] == W5500_SOCKET_AVAILALE) return 0xFF;
 	
@@ -478,6 +502,10 @@ uint8 w5500_SocketClose( uint8 sock, uint8 discon )
 	if (status == 0 ) {
 		w5500_ChipInfo.socketStatus[sock] = W5500_SOCKET_AVAILALE;
 	}
+	/*
+	 * clear pending socket interrupts
+	 */
+	w5500_Send(W5500_SREG_IR, w5500_socket_reg[sock], 1, &ir, 1 );
 	
 	return status;
 }
@@ -522,24 +550,14 @@ uint8 w5500_SocketEstablished( uint8 sock )
  *
  *
  */
-uint8 w5500_TcpStart( uint16 port )
+uint8 w5500_TcpOpenClient( uint16 port, uint32 ip )
 {
 	uint8 socket;
 	
 	/* open the socket using the TCP mode */
-	socket = w5500_SocketOpen( W5500_PROTO_TCP );
-	if (socket != 0xFF) {
-		/*
-		 * Swap the bytes in the word to fix the little/big endian differences
-		 * between the processor and the W5500.
-		 */
-		port = CYSWAP_ENDIAN16( port );
-		/*
-		 * write the source port register of the W5500 to set the port for the
-		 * TCP connection.
-		 */
-		w5500_Send(W5500_SREG_PORT,w5500_socket_reg[socket],1,&port,2);
-	}
+	socket = w5500_SocketOpen( port, W5500_PROTO_TCP, 2, 2 );
+	
+	return socket;
 }
 /* ------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------ */
