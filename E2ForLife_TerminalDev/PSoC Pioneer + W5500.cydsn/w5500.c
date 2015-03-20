@@ -185,6 +185,7 @@ const w5500_config w5500_default = {
 
 w5500_info w5500_ChipInfo;
 
+#define W5500_SOCKET_BAD(x)      ( (x > 7)||(w5500_ChipInfo.socketStatus[x] == W5500_SOCKET_AVAILALE) )
 /* ------------------------------------------------------------------------ */
 /**
  * \brief W5500 interface protocol write
@@ -346,28 +347,6 @@ void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, u
 }
 #endif
 /* ------------------------------------------------------------------------ */
-uint8 w5500_bSendControlReg( uint16 adr, uint8 value, uint8 write)
-{
-	w5500_Send(adr,W5500_BLOCK_COMMON,write,&value,1);
-	return value;
-}
-uint16 w5500_wSendControlReg( uint16 adr, uint16 value, uint8 write)
-{
-	value = CYSWAP_ENDIAN16( value );
-	w5500_Send(adr,W5500_BLOCK_COMMON,write,(uint8*)&value,2);
-	value = CYSWAP_ENDIAN16( value );
-	return value;
-}
-uint32 w5500_lSendControlReg(uint16 adr, uint32 value, uint8 write)
-{
-	value = CYSWAP_ENDIAN32( value );
-	w5500_Send(adr,W5500_BLOCK_COMMON,write, (uint8*)&value,4);
-	value = CYSWAP_ENDIAN32( value );
-	return value;
-}
-/* ------------------------------------------------------------------------ */
-
-/* ------------------------------------------------------------------------ */
 /**
  * \brief send a socket command
  * \param socket (uint8) the socket to command
@@ -392,9 +371,28 @@ uint8 w5500_ExecuteSocketCommand(uint8 socket, uint8 cmd )
 	
 	return result;
 }
-/* ======================================================================== */
-/* End Section */
-
+/* ------------------------------------------------------------------------ */
+uint16 w5500_RxDataReady( uint8 socket )
+{
+	uint16 first, second;
+	
+	/* quit on invalid sockets */
+	if (W5500_SOCKET_BAD(socket)) return 0;
+	
+	first = 0;
+	second = 0;
+	do {
+		w5500_Send(W5500_SREG_RSR, w5500_socket_reg[socket],0,(uint8*)&first,2);
+		if (first != 0) {
+			w5500_Send(W5500_SREG_RSR, w5500_socket_reg[socket],0,(uint8*)&second,2);
+		}
+	}
+	while (first != second );
+	
+	return CYSWAP_ENDIAN16(second);
+}
+/* ------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------ */
 /**
  * \brief Initialize the W5500 with the default settings configured in Creator
  * 
@@ -653,33 +651,138 @@ uint8 w5500_SocketEstablished( uint8 sock )
 /**
  * \brief Open a socket and set protocol to TCP mode
  * \param port (uint16) the port number on which to open the socket
+ * \param remote_ip (uint32) The remote IP address to connect
+ * \param remote_port (uint16) the port on the remote server to connect
  * \returns 0xFF Unable to open the socket
  * \returns uint8 socket number allocated for this socket
  *
  *
  */
-uint8 w5500_TcpOpenClient( uint16 port, uint32 ip )
+uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
+{
+	uint8 socket;
+	uint32 timeout;
+	uint8 ir;
+	uint8 rCfg[6];
+	uint8 *buffer;
+	
+	/* open the socket using the TCP mode */
+	socket = w5500_SocketOpen( port, W5500_PROTO_TCP, 2, 2 );
+
+	/*
+	 * 2.0 Patch: retun immediately upon the detection of a socket that is not open
+	 */
+	if (socket>7) return 0xFF;
+	if ( (remote_ip != 0xFFFFFFFF) && (remote_ip != 0) ) {
+		/*
+		 * a valid socket was opened, so now we can use the socket handle to
+		 * open the client connection to the specified server IP.
+		 * So, this builds a configuration packet to send to the device
+		 * to reduce the operations executed at one time (lower overhead)
+		 */
+		buffer = (uint8*)&remote_ip;
+		remote_port = CYSWAP_ENDIAN16(remote_port);
+		for( ir=0;ir<4;++ir) {
+			rCfg[ir] = buffer[ir];
+		}
+		buffer = (uint8*)&remote_port;
+		rCfg[4] = buffer[0];
+		rCfg[5] = buffer[1];
+		/*
+		 * Blast out the configuration record all at once to set up the IP and
+		 * port for the remote connection.
+		 */
+		w5500_Send(W5500_SREG_DIPR, w5500_socket_reg[socket],1,&rCfg[0], 6);
+		/* setup the socket subnet mask */
+		W5500_Send(W5500_REG_SUBR, W5500_BLOCK_COMMON, 1, (uint8*)&w5500_ChipInfo.subnet, 4);
+
+		/*
+		 * Execute the connection to the remote server and check for errors
+		 */
+		if (w5500_ExecuteSocketCommand(socket, W5500_CMD_CONNECT) == 0) {
+			timeout = 0;
+			/* wait for the socket connection to the remote host is established */
+			do {
+				CyDelay(1);
+				++timeout;
+				w5500_Send(W5500_SREG_IR, w5500_socket_reg[socket], 0, &ir, 1);
+				if ( (ir & 0x08) != 0 ) {
+					/* internal chip timeout occured */
+					timeout = 3000;
+				}				
+			}
+			while ( ((ir&0x01) == 0)  && (timeout < 3000) );
+		}
+		else {
+			w5500_SocketClose(socket,0);
+			socket = 0xFF;
+		}
+		/* Set Subnet Mask register to 0.0.0.0 */
+		rCfg[0] = 0;
+		rCfg[1] = 0;
+		rCfg[2] = 0;
+		rCfg[3] = 0;
+		w5500_Send(W5500_REG_SUBR, W5500_BLOCK_COMMON, 1, &rCfg[0], 4);
+	}
+	return socket;
+}
+/* ------------------------------------------------------------------------ */
+uint8 w5500_TcpOpenServer(uint16 port)
 {
 	uint8 socket;
 	
 	/* open the socket using the TCP mode */
 	socket = w5500_SocketOpen( port, W5500_PROTO_TCP, 2, 2 );
-	
-	if (socket < 8) {
-		/*
-		 * a valid socket was opened, so now we can use the socket handle to
-		 * open the client connection to the specified server IP.
-		 */
-		w5500_Send(W5500_SREG_DIPR, w5500_socket_reg[socket],1,(uint8*)&ip,4);
-		if (w5500_ExecuteSocketCommand(socket, W5500_CMD_CONNECT) != 0) {
-			w5500_SocketClose(socket,0);
-			socket = 0xFF;
-		}
+
+	/*
+	 * 2.0 Patch: retun immediately upon the detection of a socket that is not open
+	 */
+	if (socket>7) return 0xFF;
+	if (w5500_ExecuteSocketCommand( socket, W5500_SOCK_LISTEN) != 0) {
+		w5500_SocketClose( socket, 0);
+		socket = 0xFf;
 	}
 	return socket;
 }
 /* ------------------------------------------------------------------------ */
-/* ------------------------------------------------------------------------ */
+/**
+ * \brief suspend operation while waiting for a connection to be established
+ * \param socket (uint8) Socket handle for an open socket.
+ * \param timeout (uint32) Maximum number of milliseconds to wait for connection
+ *
+ */ 
+uint8 w5500_TcpWaitForConnection( uint8 socket, uint32 timeout )
+{
+	uint8 status;
+
+	/*
+	 * If the socket is invalid or not yet open, return a non-connect result
+	 * to prevent calling functions and waiting for the timeout for sockets
+	 * that are not yet open
+	 */
+	if (socket > 7) return 0;
+	/*
+	 * Initially read the status from the socke tto determine if a connection
+	 * is already established.
+	 */
+	w5500_Send(W5500_SREG_SR, w5500_socket_reg[socket], 0, &status, 1);
+	/*
+	 * Wait for the connectino to be established, or a timeout on the connection
+	 * delay to occur.
+	 */
+	while ( (status != W5500_SOCK_ESTABLISHED) && (timeout > 0) ) {
+		CyDelay(1);
+		--timeout;
+		w5500_Send(W5500_SREG_SR, w5500_socket_reg[socket], 0, &status, 1);
+	}
+	/* return a no-connect status when timed out */
+	if (status != W5500_SOCK_ESTABLISHED) {
+		status = 0;
+	}
+	
+	return status;
+}
 /* ------------------------------------------------------------------------ */
 	
+/* ------------------------------------------------------------------------ */
 /* [] END OF FILE */
