@@ -179,6 +179,7 @@ const w5500_config w5500_default = {
 	0
 };
 
+#define W5500_RESET_DELAY           ( 125 )
 /* ------------------------------------------------------------------------ */
 #define W5500_SOCKET_OPEN           ( 1 )
 #define W5500_SOCKET_AVAILALE       ( 0 )
@@ -382,9 +383,9 @@ uint16 w5500_RxDataReady( uint8 socket )
 	first = 0;
 	second = 0;
 	do {
-		w5500_Send(W5500_SREG_RSR, w5500_socket_reg[socket],0,(uint8*)&first,2);
+		w5500_Send(W5500_SREG_RX_RSR, w5500_socket_reg[socket],0,(uint8*)&first,2);
 		if (first != 0) {
-			w5500_Send(W5500_SREG_RSR, w5500_socket_reg[socket],0,(uint8*)&second,2);
+			w5500_Send(W5500_SREG_RX_RSR, w5500_socket_reg[socket],0,(uint8*)&second,2);
 		}
 	}
 	while (first != second );
@@ -404,7 +405,7 @@ uint16 w5500_TxBufferFree( uint8 socket )
 	do {
 		w5500_Send(W5500_SREG_TX_FSR, w5500_socket_reg[socket],0,(uint8*)&first,2);
 		if (first != 0) {
-			w5500_Send(W5500_SREG_FSR, w5500_socket_reg[socket],0,(uint8*)&second,2);
+			w5500_Send(W5500_SREG_TX_FSR, w5500_socket_reg[socket],0,(uint8*)&second,2);
 		}
 	}
 	while (first != second );
@@ -450,7 +451,9 @@ void w5500_StartEx( w5500_config *config )
 	 * issue a mode register reset to the W5500 in order to set default
 	 * register contents for the chip.
 	 */
-	w5500_bSendControlReg(W5500_REG_MODE, 0x80, 1);
+	w5500_Send(W5500_REG_MODE,W5500_BLOCK_COMMON,1, &socket_cfg[2], 1);
+	CyDelay( W5500_RESET_DELAY );
+	
 	/*
 	 * build chip initialization from the defaultl strings set in the
 	 * configuration dialog
@@ -803,6 +806,87 @@ uint8 w5500_TcpWaitForConnection( uint8 socket, uint32 timeout )
 	return status;
 }
 /* ------------------------------------------------------------------------ */
+uint8 w5500_SocketSendComplete( uint8 socket )
+{
+	uint8 ir;
+	uint8 result;
 	
+	result = 0xFF;
+	if (W5500_SOCKET_BAD( socket) ) return 0;
+	w5500_Send(W5500_SREG_IR, w5500_socket_reg[socket],0,&ir,1);
+	if ( (ir&W5500_IR_SEND_OK) != 0 ) {
+		w5500_Send(W5500_SREG_SR, w5500_socket_reg[socket],0,&ir,1);
+		if ( ir == W5500_SOCK_CLOSED ) {
+			w5500_SocketClose( socket, 1 );
+			result = 0;
+		}
+	}
+	else {
+		result = 0;
+	}
+	
+	return result;
+}
+/* ------------------------------------------------------------------------ */
+uint16 w5500_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 flags)
+{
+	uint16 tx_length;
+	uint16 max_packet;
+	uint8 buf_size;
+	uint16 ptr;
+	
+	if (W5500_SOCKET_BAD(socket) ) return 0;
+	
+	tx_length = w5500_TxBufferFree( socket );
+	if ( (tx_length < len ) && (flags&W5500_TXRX_FLG_WAIT) != 0 ) {
+		/* 
+		 * there is not enough room in the buffer, but the caller requested
+		 * this to block until there was free space. So, check the memory
+		 * size to determine if the tx buffer is big enough to handle the
+		 * data block without fragmentation.
+		 */
+		w5500_Send(W5500_SREG_TXBUF_SIZE, w5500_socket_reg[socket],0,&buf_size,1);
+		max_packet = (buf_size == 0)? 0 : (0x400 << (buf_size-1));
+		/*
+		 * now that we know the max buffer size, if it is smaller than the
+		 * requested transmit lenght, we have an error, so return 0
+		 */
+		if (max_packet < len ) return 0;
+		/* otherwise, we will wait for the room in the buffer */
+		do {
+			tx_length = w5500_TxBufferFree( socket );
+		}
+		while ( tx_length < len );
+	}
+	else {
+		tx_length = len;
+	}
+	/*
+	 * The length of the Tx data block has now been determined, and can be
+	 * copied in to the W5500 buffer memory. First read the pointer, then
+	 * write data from the pointer forward, lastly update the pointer and issue
+	 * the SEND command.
+	 */
+	w5500_Send( W5500_SREG_TX_WR, w5500_socket_reg[socket],0,(uint8*)&ptr,2);
+	ptr = CYSWAP_ENDIAN16( ptr );
+	w5500_Send( ptr, w5500_socket_tx[socket],1,buffer,tx_length);
+	ptr += tx_length;
+	ptr = CYSWAP_ENDIAN16( ptr );
+	w5500_Send(W5500_SREG_TX_WR, w5500_socket_reg[socket],1,(uint8*)&ptr,2);
+	
+	w5500_ExecuteSocketCommand( socket, W5500_CMD_SEND );
+	
+	if ( (flags & W5500_TXRX_FLG_WAIT) != 0) {
+		/*
+		 * block until send is complete
+		 */
+		do {
+			CyDelay(1);
+		}
+		while( w5500_SocketSendComplete( socket) == 0);
+	}
+	
+	return tx_length;
+}
 /* ------------------------------------------------------------------------ */
 /* [] END OF FILE */

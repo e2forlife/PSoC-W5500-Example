@@ -44,6 +44,7 @@ typedef struct {
 #define W5500_PROTO_UDP                          ( 0x02 )
 #define W5500_PROTO_MACRAW                       ( 0x04 )
 
+#define W5500_TXRX_FLG_WAIT                      ( 0x01 )
 
 void w5500_Start( void );
 void w5500_StartEx( w5500_config *config );
