@@ -392,6 +392,26 @@ uint16 w5500_RxDataReady( uint8 socket )
 	return CYSWAP_ENDIAN16(second);
 }
 /* ------------------------------------------------------------------------ */
+uint16 w5500_TxBufferFree( uint8 socket )
+{
+	uint16 first, second;
+	
+	/* quit on invalid sockets */
+	if (W5500_SOCKET_BAD(socket)) return 0;
+	
+	first = 0;
+	second = 0;
+	do {
+		w5500_Send(W5500_SREG_TX_FSR, w5500_socket_reg[socket],0,(uint8*)&first,2);
+		if (first != 0) {
+			w5500_Send(W5500_SREG_FSR, w5500_socket_reg[socket],0,(uint8*)&second,2);
+		}
+	}
+	while (first != second );
+	
+	return CYSWAP_ENDIAN16(second);
+}
+/* ------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------ */
 /**
  * \brief Initialize the W5500 with the default settings configured in Creator
