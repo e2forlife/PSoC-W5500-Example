@@ -6,6 +6,11 @@
 #include <ETH_CSN.h>
 #include <SPI0.h>
 
+#if defined (CY_SCB_SPI0_H)
+	#include <SPI0_SPI_UART.h>
+#endif
+
+
 #include "w5500.h"
 #include "iot.h"
 
@@ -189,6 +194,7 @@ w5500_info w5500_ChipInfo;
  * \param len length of the data to send
  */
 void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, uint16 len)
+#if !defined(CY_SCB_SPI0_H)
 {
 	uint8 status;
 	int count;
@@ -261,6 +267,84 @@ void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, u
 	ETH_CSN_Write(1);
 	SPI0_ClearFIFO();
 }
+#else
+	/*
+	 * W5500_Send (SCB Mode)
+	 */
+{
+	uint8 status;
+	int count;
+	
+	/* wait for SPI operations to complete */
+	while( SPI0_SpiIsBusBusy() != 0) {
+		CyDelay(1);
+	}
+		
+	/* set write bit in the control phase data */
+	block_select = block_select | ((write!=0)?0x04:0); 
+	/* select the data mode based on the block length */
+	if (len == 1) {
+		block_select = block_select | 0x01;
+	}
+	else if (len == 2) {
+		block_select = block_select | 0x02;
+	}
+	else if (len == 4) {
+		block_select = block_select | 0x03;
+	}
+	
+	/* select the device */
+	ETH_CSN_Write(0);
+	/* send the address phase data */
+	SPI0_SpiUartWriteTxData( HI8(offset) );
+	SPI0_SpiUartWriteTxData( LO8(offset) );
+	/* send the control phase data */
+	SPI0_SpiUartWriteTxData( block_select );
+	/*
+	 * clear data read during the previous SPI write.  FIrst, wait for data
+	 * to arrive in the RX fifo (if not has yet been received), then, read the
+	 * data and wait for 3 data elements to be read (the length of the header
+	 * sent during the address and control phase of the protocol
+	 */
+	count = 3;
+	while ( (count != 0) || (SPI0_SpiUartGetRxBufferSize() ) ) {
+		if (SPI0_SpiUartGetRxBufferSize() ) {
+			status = SPI0_SpiUartReadRxData();
+			count = (count==0)?0:count-1;
+		}
+		CyDelayUs(5);
+	}
+	/* 
+	 * Now that the Receive FIFO has been flushed, send data through
+	 * the SPI port and wait for the receive buffer to contain data. Once the
+	 * receive buffer contains data, read the data and store it in to the
+	 * buffer.
+	 */
+	count = 0;
+	while ( count < len) {
+		
+		if (SPI0_SpiUartGetTxBufferSize() < 4) {
+			SPI0_SpiUartWriteTxData( (write==1)?buffer[count] : 0xFF );
+			while (SPI0_SpiUartGetRxBufferSize() == 0);
+			if (write == 0) {
+				buffer[count] = SPI0_SpiUartReadRxData();
+			}
+			else {
+				status = SPI0_SpiUartReadRxData();
+			}
+			++count;
+		}
+		CyDelayUs(5);
+	}
+	/* Turn off the chip select. */
+	while (SPI0_SpiIsBusBusy() != 0) {
+		CyDelay(1);
+	}
+	ETH_CSN_Write(1);
+	SPI0_SpiUartClearRxBuffer();
+	SPI0_SpiUartClearTxBuffer();
+}
+#endif
 /* ------------------------------------------------------------------------ */
 uint8 w5500_bSendControlReg( uint16 adr, uint8 value, uint8 write)
 {
@@ -320,6 +404,11 @@ uint8 w5500_ExecuteSocketCommand(uint8 socket, uint8 cmd )
  */
 void w5500_Start( void )
 {
+//	uint8 mac[] = {0x00, 0xDE, 0xAD, 0xBE, 0xEF, 0x00};
+//	uint8 rd[6];	
+//	w5500_Send(W5500_REG_SHAR,W5500_BLOCK_COMMON,1, &mac[0], 6);
+//	w5500_Send(W5500_REG_SHAR, W5500_BLOCK_COMMON, 0, &rd[0], 6);
+	
 	w5500_StartEx( (w5500_config*)&w5500_default );
 }
 /* ------------------------------------------------------------------------ */
@@ -384,6 +473,25 @@ void w5500_StartEx( w5500_config *config )
 	w5500_Send(W5500_REG_GAR,W5500_BLOCK_COMMON,1,&chip_config[0], 18);	
 }
 /* ------------------------------------------------------------------------ */
+/**
+ * \brief Open and initialize a socket for use
+ * \param port (uint16) the por tnumbe ron which the socket will be open
+ * \param flags (uint8) Protocol and setting information for the socket mode
+ * \param tx_size (uint8) Transmit buffer length
+ * \param rx_size (uint8) Receive FIFO buffer length
+ * \returns uint8 socket handle 0 - 7
+ * \returns 0xFF socket open error
+ *
+ * w5500_SocketOpen initializes and opens a socket on the specified port using
+ * the socket mode specified by the flags.  Upon sucessful opening, the socket
+ * handle will be returned for future use by the driver.  A return value of 
+ * 0xFF indicates a socket open failure.
+ *
+ * Socket handle 0 is reserved for MACRAW operations, since socket 0 of the
+ * W5500 is the only socket where MACRAW more operations are valid.
+ *
+ * \note the Tx_size and rx_size parameters are ignored and assumed to be 2K
+ */
 uint8 w5500_SocketOpen( uint16 port, uint8 flags, uint8 tx_size, uint8 rx_size )
 {
 	uint8 socket;
@@ -557,6 +665,17 @@ uint8 w5500_TcpOpenClient( uint16 port, uint32 ip )
 	/* open the socket using the TCP mode */
 	socket = w5500_SocketOpen( port, W5500_PROTO_TCP, 2, 2 );
 	
+	if (socket < 8) {
+		/*
+		 * a valid socket was opened, so now we can use the socket handle to
+		 * open the client connection to the specified server IP.
+		 */
+		w5500_Send(W5500_SREG_DIPR, w5500_socket_reg[socket],1,(uint8*)&ip,4);
+		if (w5500_ExecuteSocketCommand(socket, W5500_CMD_CONNECT) != 0) {
+			w5500_SocketClose(socket,0);
+			socket = 0xFF;
+		}
+	}
 	return socket;
 }
 /* ------------------------------------------------------------------------ */
