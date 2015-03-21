@@ -17,7 +17,7 @@
 /* ------------------------------------------------------------------------ */
 /* Macros & Function Defines */
 /*
- * W5500 REgister Map
+ * W5500 Register Map
  */
 #define W5500_REG_MODE            ( 0x0000 )
 #define W5500_REG_GAR             ( 0x0001 )
@@ -463,7 +463,7 @@ void w5500_StartEx( w5500_config *config )
 		/* Send socket register setup to the chip */
 		w5500_Send( W5500_SREG_RXBUF_SIZE, w5500_socket_reg[socket], 1, &socket_cfg[0], 14);
 	}
-	/* Build gateway address ppacket */
+	/* Build gateway address packet */
 	w5500_ChipInfo.Gateway = IOT_ParseIP(config->gateway);
 	w5500_ChipInfo.subnet = IOT_ParseIP(config->subnet);
 	IOT_ParseMAC(config->mac, &w5500_ChipInfo.MAC[0] );
@@ -656,19 +656,32 @@ uint8 w5500_SocketDisconnect( uint8 sock )
  * \param sock (uint8) the socket number to which status shoudl be checked
  * \returns 0 Socket is not yet established
  * \returns 0xFF Socket is not open
- * \returns uint8 Non-Zero, Non-FF value indicating the socket is established
+ * \returns 0x80 Socket Timeout
+ * \returns 0x01 the socket connection is established
  */
-uint8 w5500_SocketEstablished( uint8 sock )
+uint8 w5500_TcpConnected( uint8 sock )
 {
 	uint8 status;
+	
+	if (sock > 7) return 0;
 	
 	if (w5500_ChipInfo.socketStatus[sock] == W5500_SOCKET_AVAILALE) {
 		return 0xFF;
 	}
 	
 	w5500_Send(W5500_SREG_SR,w5500_socket_reg[sock],0,&status, 1);
-	
-	return ((status == W5500_SOCK_ESTABLISHED)?0x13:0);
+	if (status == W5500_SOCK_ESTABLISHED) {
+		return 0x01;
+	}
+	else {
+		w5500_Send(W5500_SREG_IR, w5500_socket_reg[sock],0,&status, 1);
+		if ( (status & W5500_IR_TIMEOUT) != 0) {
+			status = 0xFF;
+			w5500_Send(W5500_SREG_IR, w5500_socket_reg[sock],1,&status,1);
+			return 0x80;
+		}
+	}
+	return 0;
 }
 /* ------------------------------------------------------------------------ */
 /**
@@ -717,7 +730,7 @@ uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
 		 */
 		w5500_Send(W5500_SREG_DIPR, w5500_socket_reg[socket],1,&rCfg[0], 6);
 		/* setup the socket subnet mask */
-		W5500_Send(W5500_REG_SUBR, W5500_BLOCK_COMMON, 1, (uint8*)&w5500_ChipInfo.subnet, 4);
+//		W5500_Send(W5500_REG_SUBR, W5500_BLOCK_COMMON, 1, (uint8*)&w5500_ChipInfo.subnet, 4);
 
 		/*
 		 * Execute the connection to the remote server and check for errors
@@ -741,11 +754,11 @@ uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
 			socket = 0xFF;
 		}
 		/* Set Subnet Mask register to 0.0.0.0 */
-		rCfg[0] = 0;
-		rCfg[1] = 0;
-		rCfg[2] = 0;
-		rCfg[3] = 0;
-		w5500_Send(W5500_REG_SUBR, W5500_BLOCK_COMMON, 1, &rCfg[0], 4);
+//		rCfg[0] = 0;
+//		rCfg[1] = 0;
+//		rCfg[2] = 0;
+//		rCfg[3] = 0;
+//		w5500_Send(W5500_REG_SUBR, W5500_BLOCK_COMMON, 1, &rCfg[0], 4);
 	}
 	return socket;
 }
@@ -771,10 +784,9 @@ uint8 w5500_TcpOpenServer(uint16 port)
 /**
  * \brief suspend operation while waiting for a connection to be established
  * \param socket (uint8) Socket handle for an open socket.
- * \param timeout (uint32) Maximum number of milliseconds to wait for connection
  *
  */ 
-uint8 w5500_TcpWaitForConnection( uint8 socket, uint32 timeout )
+uint8 w5500_TcpWaitForConnection( uint8 socket )
 {
 	uint8 status;
 
@@ -785,22 +797,13 @@ uint8 w5500_TcpWaitForConnection( uint8 socket, uint32 timeout )
 	 */
 	if (socket > 7) return 0;
 	/*
-	 * Initially read the status from the socke tto determine if a connection
-	 * is already established.
-	 */
-	w5500_Send(W5500_SREG_SR, w5500_socket_reg[socket], 0, &status, 1);
-	/*
 	 * Wait for the connectino to be established, or a timeout on the connection
 	 * delay to occur.
 	 */
-	while ( (status != W5500_SOCK_ESTABLISHED) && (timeout > 0) ) {
+	status = w5500_TcpConnected( socket );
+	while ( status == 0 ) {
 		CyDelay(1);
-		--timeout;
-		w5500_Send(W5500_SREG_SR, w5500_socket_reg[socket], 0, &status, 1);
-	}
-	/* return a no-connect status when timed out */
-	if (status != W5500_SOCK_ESTABLISHED) {
-		status = 0;
+		status = w5500_TcpConnected(socket);
 	}
 	
 	return status;
@@ -887,6 +890,14 @@ uint16 w5500_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 flags)
 	}
 	
 	return tx_length;
+}
+/* ------------------------------------------------------------------------ */
+void w5500_TcpPrint(uint8 socket, const char *string )
+{
+	uint16 length;
+	
+	length = strlen(string);
+	w5500_TcpSend(socket, (uint8*) string,length, 0);
 }
 /* ------------------------------------------------------------------------ */
 /* [] END OF FILE */

@@ -66,8 +66,7 @@ void ETH_PutString( const char *str )
 /* ------------------------------------------------------------------------ */
 int main()
 {
-	uint32 gar;
-	uint32 check;
+	uint8 socket;
 	
     /* Place your initialization/startup code here (e.g. MyInst_Start()) */
 	/*
@@ -78,7 +77,18 @@ int main()
 	/* Initialize the w5500 */
 	w5500_Start();
 	
-	shell_Start( &psoc_sh );
+	socket = w5500_TcpOpenServer( 23 );
+	w5500_TcpWaitForConnection( socket );
+	
+	w5500_TcpPrint( socket, "Hello World!\r\n");
+	
+	while (w5500_SocketSendComplete(socket) == 0) {
+		CyDelay(1);
+	}
+	
+	w5500_SocketClose( socket, 1 );
+	
+	//shell_Start( &psoc_sh );
     /* CyGlobalIntEnable; */ /* Uncomment this line to enable global interrupts. */
     for(;;)
     {

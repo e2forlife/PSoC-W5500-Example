@@ -49,6 +49,18 @@ typedef struct {
 void w5500_Start( void );
 void w5500_StartEx( w5500_config *config );
 
+uint8 w5500_SocketOpen( uint16 port, uint8 flags, uint8 tx_size, uint8 rx_size );
+uint8 w5500_SocketClose( uint8 sock, uint8 discon );
+uint8 w5500_SocketDisconnect( uint8 sock );
+uint8 w5500_SocketSendComplete( uint8 socket );
+
+uint8 w5500_TcpConnected( uint8 sock );
+uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port );
+uint8 w5500_TcpOpenServer(uint16 port);
+uint8 w5500_TcpWaitForConnection( uint8 socket );
+uint16 w5500_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 flags);
+void w5500_TcpPrint(uint8 socket, const char *string );
+
 #endif
 
 /* [] END OF FILE */
