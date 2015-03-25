@@ -774,7 +774,7 @@ uint8 w5500_TcpOpenServer(uint16 port)
 	 * 2.0 Patch: retun immediately upon the detection of a socket that is not open
 	 */
 	if (socket>7) return 0xFF;
-	if (w5500_ExecuteSocketCommand( socket, W5500_SOCK_LISTEN) != 0) {
+	if (w5500_ExecuteSocketCommand( socket, W5500_CMD_LISTEN) != 0) {
 		w5500_SocketClose( socket, 0);
 		socket = 0xFf;
 	}
