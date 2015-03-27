@@ -364,9 +364,9 @@ uint8 w5500_ExecuteSocketCommand(uint8 socket, uint8 cmd )
 	w5500_Send(W5500_SREG_CR, w5500_socket_reg[socket], 1, &cmd, 1);
 	timeout = 0;
 	do {
-		CyDelay(1);
+//		CyDelay(1);
 		w5500_Send( W5500_SREG_CR, w5500_socket_reg[socket], 0, &result, 1);
-		++timeout;
+//		++timeout;
 	}
 	while ( (result != 0) && (timeout < W5500_CMD_TIMEOUT) );
 	
@@ -766,6 +766,7 @@ uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
 uint8 w5500_TcpOpenServer(uint16 port)
 {
 	uint8 socket;
+	uint8 status;
 	
 	/* open the socket using the TCP mode */
 	socket = w5500_SocketOpen( port, W5500_PROTO_TCP, 2, 2 );
@@ -774,10 +775,22 @@ uint8 w5500_TcpOpenServer(uint16 port)
 	 * 2.0 Patch: retun immediately upon the detection of a socket that is not open
 	 */
 	if (socket>7) return 0xFF;
-	if (w5500_ExecuteSocketCommand( socket, W5500_CMD_LISTEN) != 0) {
-		w5500_SocketClose( socket, 0);
-		socket = 0xFf;
+	
+	CyDelay(10);
+	w5500_Send(W5500_SREG_SR,w5500_socket_reg[socket],0,&status,1);
+	if (status != W5500_SOCK_INIT) {
+		/*
+		 * Error opening socket
+		 */
+		w5500_SocketClose(socket,0);
+		socket = 0xFF;
+		for(;;);
 	}
+	else if (w5500_ExecuteSocketCommand( socket, W5500_CMD_LISTEN) != 0) {
+		w5500_SocketClose( socket, 0);
+		socket = 0xFF;
+	}
+	
 	return socket;
 }
 /* ------------------------------------------------------------------------ */
@@ -800,12 +813,12 @@ uint8 w5500_TcpWaitForConnection( uint8 socket )
 	 * Wait for the connectino to be established, or a timeout on the connection
 	 * delay to occur.
 	 */
-	status = w5500_TcpConnected( socket );
-	while ( status == 0 ) {
-		CyDelay(1);
-		status = w5500_TcpConnected(socket);
+	do {
+		CyDelay(10);
+		w5500_Send(W5500_SREG_SR,w5500_socket_reg[socket],0,&status, 1);
 	}
-	
+	while ( status == W5500_SOCK_LISTEN );
+		
 	return status;
 }
 /* ------------------------------------------------------------------------ */
