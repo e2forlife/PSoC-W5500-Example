@@ -2,6 +2,7 @@
 
 #include <cylib.h>
 #include <cytypes.h>
+#include <project.h>
 
 #include <ETH_CSN.h>
 #include <SPI0.h>
@@ -481,9 +482,16 @@ void w5500_StartEx( w5500_config *config )
 	chip_config[6] = pip[2];
 	chip_config[7] = pip[3];
 	/* Default hardware address */
-	for (socket = 0;socket<6;++socket) {
-		chip_config[8+socket] = w5500_ChipInfo.MAC[socket];
-	}
+//	for (socket = 0;socket<6;++socket) {
+//		chip_config[8+socket] = w5500_ChipInfo.MAC[socket];
+//	}
+	chip_config[8] = 0x00;
+	chip_config[9] = 0xDE;
+	chip_config[10] = 0xAD;
+	chip_config[11] = 0xBE;
+	chip_config[12] = 0xEF;
+	chip_config[13] = 0x00;
+	
 	/* Default fixed IP address for the chip */
 	pip = (uint8*) &w5500_ChipInfo.ip;
 	chip_config[14] = pip[0];
@@ -776,7 +784,6 @@ uint8 w5500_TcpOpenServer(uint16 port)
 	 */
 	if (socket>7) return 0xFF;
 	
-	CyDelay(10);
 	w5500_Send(W5500_SREG_SR,w5500_socket_reg[socket],0,&status,1);
 	if (status != W5500_SOCK_INIT) {
 		/*
@@ -784,6 +791,7 @@ uint8 w5500_TcpOpenServer(uint16 port)
 		 */
 		w5500_SocketClose(socket,0);
 		socket = 0xFF;
+		RED_Write(0);
 		for(;;);
 	}
 	else if (w5500_ExecuteSocketCommand( socket, W5500_CMD_LISTEN) != 0) {

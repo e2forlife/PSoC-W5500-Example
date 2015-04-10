@@ -67,7 +67,7 @@ void ETH_PutString( const char *str )
 int main()
 {
 	uint8 socket;
-	
+		
     /* Place your initialization/startup code here (e.g. MyInst_Start()) */
 	/*
 	 * Initialize the hardware perepherals used to communicate
