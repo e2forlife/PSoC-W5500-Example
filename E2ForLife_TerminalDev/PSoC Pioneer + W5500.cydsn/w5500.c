@@ -173,13 +173,14 @@ const uint8 w5500_socket_rx[8] = {
 };
 /* ------------------------------------------------------------------------ */
 const w5500_config w5500_default = {
-	"192.168.1.1",
-	"255.255.255.0",
-	"00:DE:AD:BE:EF:00",
-	"192.168.1.101",
-	0
+	"192.168.1.1",       // Gateway IP address
+	"255.255.255.0",     // Subnet MAsk
+	"00:08:DC:1C:AC:3F", // Device MAC Address
+	"192.168.1.101",     // Device IP address
+	0                    // Flags (TBD)
 };
 
+#define W5500_CS_MASK               ( 1<<0 )
 #define W5500_RESET_DELAY           ( 125 )
 /* ------------------------------------------------------------------------ */
 #define W5500_SOCKET_OPEN           ( 1 )
@@ -221,7 +222,7 @@ void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, u
 	}
 	
 	/* select the device */
-	ETH_CSN_Write(0);
+	ETH_CSN_Write(~(W5500_CS_MASK));
 	/* send the address phase data */
 	SPI0_WriteTxData( HI8(offset) );
 	SPI0_WriteTxData( LO8(offset) );
@@ -267,7 +268,7 @@ void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, u
 	do {
 		status = SPI0_ReadTxStatus() & (SPI0_STS_SPI_IDLE|SPI0_STS_SPI_DONE);
 	} while ( status == 0);
-	ETH_CSN_Write(1);
+	ETH_CSN_Write(0xFF);
 	SPI0_ClearFIFO();
 }
 #else
@@ -297,7 +298,7 @@ void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, u
 	}
 	
 	/* select the device */
-	ETH_CSN_Write(0);
+	ETH_CSN_Write(~(W5500_CS_MASK));
 	/* send the address phase data */
 	SPI0_SpiUartWriteTxData( HI8(offset) );
 	SPI0_SpiUartWriteTxData( LO8(offset) );
@@ -344,7 +345,7 @@ void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, u
 	while (SPI0_SpiIsBusBusy() != 0) {
 		CyDelay(1);
 	}
-	ETH_CSN_Write(1);
+	ETH_CSN_Write(0xFF);
 	SPI0_SpiUartClearRxBuffer();
 	SPI0_SpiUartClearTxBuffer();
 }
@@ -424,12 +425,7 @@ uint16 w5500_TxBufferFree( uint8 socket )
  * Creator tools.
  */
 void w5500_Start( void )
-{
-//	uint8 mac[] = {0x00, 0xDE, 0xAD, 0xBE, 0xEF, 0x00};
-//	uint8 rd[6];	
-//	w5500_Send(W5500_REG_SHAR,W5500_BLOCK_COMMON,1, &mac[0], 6);
-//	w5500_Send(W5500_REG_SHAR, W5500_BLOCK_COMMON, 0, &rd[0], 6);
-	
+{	
 	w5500_StartEx( (w5500_config*)&w5500_default );
 }
 /* ------------------------------------------------------------------------ */
@@ -738,8 +734,6 @@ uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
 		 * port for the remote connection.
 		 */
 		w5500_Send(W5500_SREG_DIPR, w5500_socket_reg[socket],1,&rCfg[0], 6);
-		/* setup the socket subnet mask */
-//		W5500_Send(W5500_REG_SUBR, W5500_BLOCK_COMMON, 1, (uint8*)&w5500_ChipInfo.subnet, 4);
 
 		/*
 		 * Execute the connection to the remote server and check for errors
@@ -762,16 +756,22 @@ uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
 			w5500_SocketClose(socket,0);
 			socket = 0xFF;
 		}
-		/* Set Subnet Mask register to 0.0.0.0 */
-//		rCfg[0] = 0;
-//		rCfg[1] = 0;
-//		rCfg[2] = 0;
-//		rCfg[3] = 0;
-//		w5500_Send(W5500_REG_SUBR, W5500_BLOCK_COMMON, 1, &rCfg[0], 4);
 	}
 	return socket;
 }
 /* ------------------------------------------------------------------------ */
+/**
+ * \brief Open a TCP server socket using a specified port
+ * \param port The port number to assign to the socket
+ * \returns uint8 socket number for open server socket
+ * \returns 0xFF Socket error, cannot open socket.
+ *
+ * _TcpOpenServer opens a socket with the TCP protocol on the port specified
+ * by the parameter (port).  After opening the socket, _TcpOpenServer will
+ * issue a LISTEN command to the W5500 to initiate a server. The server will
+ * connect when a valid SYN packet is received.
+ * \sa _SocketOpen
+ */
 uint8 w5500_TcpOpenServer(uint16 port)
 {
 	uint8 socket;
@@ -791,11 +791,6 @@ uint8 w5500_TcpOpenServer(uint16 port)
 		 * Error opening socket
 		 */
 		w5500_SocketClose(socket,0);
-		socket = 0xFF;
-		BLUE_Write(1);
-		GREEN_Write(1);
-		RED_Write(0);
-		for(;;);
 	}
 	else if (w5500_ExecuteSocketCommand( socket, W5500_CMD_LISTEN) != 0) {
 		w5500_SocketClose( socket, 0);
@@ -809,6 +804,11 @@ uint8 w5500_TcpOpenServer(uint16 port)
  * \brief suspend operation while waiting for a connection to be established
  * \param socket (uint8) Socket handle for an open socket.
  *
+ * _TcpWaitForConnection will poll the W5500 and wait until a connection has
+ * been established.  Note that this is a BLOCKING call and will deadlock your
+ * control loop if your application waits for long periods between connections.
+ * Use _TcpConnected for non-blocking scans.
+ * \sa _TcpConnected
  */ 
 uint8 w5500_TcpWaitForConnection( uint8 socket )
 {
@@ -833,13 +833,16 @@ uint8 w5500_TcpWaitForConnection( uint8 socket )
 	return status;
 }
 /* ------------------------------------------------------------------------ */
+/**
+ * \brief Check to see if a SEND operation was completed.
+ */
 uint8 w5500_SocketSendComplete( uint8 socket )
 {
 	uint8 ir;
 	uint8 result;
 	
 	result = 0xFF;
-	if (W5500_SOCKET_BAD( socket) ) return 0;
+	if (W5500_SOCKET_BAD( socket ) ) return 0;
 	w5500_Send(W5500_SREG_IR, w5500_socket_reg[socket],0,&ir,1);
 	if ( (ir&W5500_IR_SEND_OK) != 0 ) {
 		w5500_Send(W5500_SREG_SR, w5500_socket_reg[socket],0,&ir,1);
