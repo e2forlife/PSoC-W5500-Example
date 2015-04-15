@@ -72,14 +72,19 @@ int main()
 	/*
 	 * Initialize the hardware perepherals used to communicate
 	 */
-	SPI0_Start();
 	ETH_CSN_Write(1);
+	SPI0_Start();
+	BLUE_Write(0);
+	RED_Write(1);
+	GREEN_Write(1);
 	/* Initialize the w5500 */
 	w5500_Start();
 	
 	socket = w5500_TcpOpenServer( 23 );
 	w5500_TcpWaitForConnection( socket );
-	
+	GREEN_Write(0);
+	BLUE_Write(1);
+	RED_Write(1);
 	w5500_TcpPrint( socket, "Hello World!\r\n");
 	
 	while (w5500_SocketSendComplete(socket) == 0) {

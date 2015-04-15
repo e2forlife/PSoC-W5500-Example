@@ -111,16 +111,18 @@ cystatus IOT_ParseMAC(const char *macString, uint8 *mac)
 	for(digit = 0;(digit<6) && (result == CYRET_SUCCESS)&&(macString[index] != 0);++digit) {
 		// process the first nibble
 		if (isxdigit(macString[index]) ) {
-			mac[digit] = _HEX2BIN(macString[index++]);
+			mac[digit] = _HEX2BIN(macString[index]);
+			++index;
 			mac[digit] <<= 4;
 			if (isxdigit(macString[index])) {
-				mac[digit] += _HEX2BIN(macString[index++]);
+				mac[digit] += _HEX2BIN(macString[index]);
+				++index;
 				/*
 				 * now for digits other than digit 5 (the last one) look for
 				 * the dash seperator.  If there is no dash, return bad data
 				 */
 				if (digit<5) {
-					if (macString[index]!='-') {
+					if (macString[index]!=':') {
 						result = CYRET_BAD_DATA;
 					}
 					++index; // move conversion pointer to the next value
@@ -163,7 +165,7 @@ void IOT_StringMAC(uint8 *mac, char *macString)
 		macString[index++] = _BIN2HEX(((mac[digit]>>4)&0x0F));
 		macString[index++] = _BIN2HEX((mac[digit]&0x0F));
 		if (digit<5) {
-			macString[index++] = '-';
+			macString[index++] = ':';
 		}
 		else {
 			macString[index] = 0;

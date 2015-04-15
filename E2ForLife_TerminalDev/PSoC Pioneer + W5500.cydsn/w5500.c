@@ -175,7 +175,7 @@ const uint8 w5500_socket_rx[8] = {
 const w5500_config w5500_default = {
 	"192.168.1.1",
 	"255.255.255.0",
-	"00-DE-AD-BE-EF-00",
+	"00:DE:AD:BE:EF:00",
 	"192.168.1.101",
 	0
 };
@@ -339,6 +339,7 @@ void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, u
 		}
 		CyDelayUs(5);
 	}
+	
 	/* Turn off the chip select. */
 	while (SPI0_SpiIsBusBusy() != 0) {
 		CyDelay(1);
@@ -447,59 +448,66 @@ void w5500_StartEx( w5500_config *config )
 	uint8 chip_config[18];
 	uint8* pip;
 	uint8 socket_cfg[14] = { 2, 2, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	uint8 chip_verify[18];
+	uint8 init_good;
 	
-	/*
-	 * issue a mode register reset to the W5500 in order to set default
-	 * register contents for the chip.
-	 */
-	w5500_Send(W5500_REG_MODE,W5500_BLOCK_COMMON,1, &socket_cfg[2], 1);
-	CyDelay( W5500_RESET_DELAY );
-	
-	/*
-	 * build chip initialization from the defaultl strings set in the
-	 * configuration dialog
-	 */
-	for (socket = 0; socket < 8; ++socket) {
-		w5500_ChipInfo.socketStatus[socket] = W5500_SOCKET_AVAILALE;
-		/* Send socket register setup to the chip */
-		w5500_Send( W5500_SREG_RXBUF_SIZE, w5500_socket_reg[socket], 1, &socket_cfg[0], 14);
+	do {
+		/*
+		 * issue a mode register reset to the W5500 in order to set default
+		 * register contents for the chip.
+		 */
+		w5500_Send(W5500_REG_MODE,W5500_BLOCK_COMMON,1, &socket_cfg[2], 1);
+		CyDelay( W5500_RESET_DELAY );
+		
+		/*
+		 * build chip initialization from the default strings set in the
+		 * configuration dialog
+		 */
+		for (socket = 0; socket < 8; ++socket) {
+			w5500_ChipInfo.socketStatus[socket] = W5500_SOCKET_AVAILALE;
+			/* Send socket register setup to the chip */
+			w5500_Send( W5500_SREG_RXBUF_SIZE, w5500_socket_reg[socket], 1, &socket_cfg[0], 14);
+		}
+		/* Build gateway address packet */
+		w5500_ChipInfo.Gateway = IOT_ParseIP(config->gateway);
+		w5500_ChipInfo.subnet = IOT_ParseIP(config->subnet);
+		IOT_ParseMAC(config->mac, &w5500_ChipInfo.MAC[0] );
+		w5500_ChipInfo.ip = IOT_ParseIP(config->ip);
+		
+		pip = (uint8*)&w5500_ChipInfo.Gateway;
+		chip_config[0] = pip[0];
+		chip_config[1] = pip[1];
+		chip_config[2] = pip[2];
+		chip_config[3] = pip[3];
+		/* Default subnet mask */
+		pip = (uint8*)&w5500_ChipInfo.subnet;
+		chip_config[4] = pip[0];
+		chip_config[5] = pip[1];
+		chip_config[6] = pip[2];
+		chip_config[7] = pip[3];
+		/* Default hardware address */
+		for (socket = 0;socket<6;++socket) {
+			chip_config[8+socket] = w5500_ChipInfo.MAC[socket];
+		}
+		
+		/* Default fixed IP address for the chip */
+		pip = (uint8*) &w5500_ChipInfo.ip;
+		chip_config[14] = pip[0];
+		chip_config[15] = pip[1];
+		chip_config[16] = pip[2];
+		chip_config[17] = pip[3];
+		//CyDelay(50);
+		w5500_Send(W5500_REG_GAR,W5500_BLOCK_COMMON,1,&chip_config[0], 18);
+		w5500_Send(W5500_REG_GAR,W5500_BLOCK_COMMON,0,&chip_verify[0], 18);
+		
+		init_good = 0xFF;
+		for (socket=0;(init_good != 0)&&(socket<18);++socket) {
+			if (chip_config[socket] != chip_verify[socket]) {
+				init_good = 0;
+			}
+		}
 	}
-	/* Build gateway address packet */
-	w5500_ChipInfo.Gateway = IOT_ParseIP(config->gateway);
-	w5500_ChipInfo.subnet = IOT_ParseIP(config->subnet);
-	IOT_ParseMAC(config->mac, &w5500_ChipInfo.MAC[0] );
-	w5500_ChipInfo.ip = IOT_ParseIP(config->ip);
-	
-	pip = (uint8*)&w5500_ChipInfo.Gateway;
-	chip_config[0] = pip[0];
-	chip_config[1] = pip[1];
-	chip_config[2] = pip[2];
-	chip_config[3] = pip[3];
-	/* Default subnet mask */
-	pip = (uint8*)&w5500_ChipInfo.subnet;
-	chip_config[4] = pip[0];
-	chip_config[5] = pip[1];
-	chip_config[6] = pip[2];
-	chip_config[7] = pip[3];
-	/* Default hardware address */
-//	for (socket = 0;socket<6;++socket) {
-//		chip_config[8+socket] = w5500_ChipInfo.MAC[socket];
-//	}
-	chip_config[8] = 0x00;
-	chip_config[9] = 0xDE;
-	chip_config[10] = 0xAD;
-	chip_config[11] = 0xBE;
-	chip_config[12] = 0xEF;
-	chip_config[13] = 0x00;
-	
-	/* Default fixed IP address for the chip */
-	pip = (uint8*) &w5500_ChipInfo.ip;
-	chip_config[14] = pip[0];
-	chip_config[15] = pip[1];
-	chip_config[16] = pip[2];
-	chip_config[17] = pip[3];
-	CyDelay(50);
-	w5500_Send(W5500_REG_GAR,W5500_BLOCK_COMMON,1,&chip_config[0], 18);	
+	while (init_good == 0);
 }
 /* ------------------------------------------------------------------------ */
 /**
@@ -578,13 +586,6 @@ uint8 w5500_SocketOpen( uint16 port, uint8 flags, uint8 tx_size, uint8 rx_size )
 	rx_size = 2;
 	w5500_Send( W5500_SREG_TXBUF_SIZE, w5500_socket_reg[socket], 1, &tx_size, 1);
 	w5500_Send( W5500_SREG_RXBUF_SIZE, w5500_socket_reg[socket], 1, &rx_size, 1);
-	/*
-	 * Memory sizes are set, now initialize the memory pointers to flush the
-	 * FIFO data.
-	 */
-	w5500_Send( W5500_SREG_TX_RD, w5500_socket_reg[socket], 1, &zero[0], 4);
-	w5500_Send( W5500_SREG_RX_RD, w5500_socket_reg[socket], 1, &zero[0], 4);
-	
 	/*
 	 * execute the open command, and check the result.  If the result
 	 * was not 0, there was an error in the command, so set the socket
@@ -791,6 +792,8 @@ uint8 w5500_TcpOpenServer(uint16 port)
 		 */
 		w5500_SocketClose(socket,0);
 		socket = 0xFF;
+		BLUE_Write(1);
+		GREEN_Write(1);
 		RED_Write(0);
 		for(;;);
 	}
