@@ -21,7 +21,10 @@ void ETH_PutString( const char *str );
 int main()
 {
 	uint8 socket;
-		
+	
+	// Wait for IMP reset monitor on the Wiz550A board to come out of reset
+	CyDelay(560);
+	
     /* Place your initialization/startup code here (e.g. MyInst_Start()) */
 	/*
 	 * Initialize the hardware perepherals used to communicate
@@ -32,7 +35,10 @@ int main()
 	RED_Write(1);
 	GREEN_Write(1);
 	/* Initialize the w5500 */
-	w5500_Start();
+	if (w5500_Start() != CYRET_SUCCESS) {
+		RED_Write(0);
+		for(;;);
+	}
 	
 	socket = w5500_TcpOpenServer( 23 );
 	w5500_TcpWaitForConnection( socket );
