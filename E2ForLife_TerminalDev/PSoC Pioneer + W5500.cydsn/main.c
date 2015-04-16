@@ -22,10 +22,9 @@ int main()
 {
 	uint8 socket;
 	
-	// Wait for IMP reset monitor on the Wiz550A board to come out of reset
+	// Wait for IMP reset monitor on the WizIOShield-A board to come out of reset
 	CyDelay(560);
 	
-    /* Place your initialization/startup code here (e.g. MyInst_Start()) */
 	/*
 	 * Initialize the hardware perepherals used to communicate
 	 */
