@@ -123,7 +123,7 @@ uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
 		/*
 		 * Execute the connection to the remote server and check for errors
 		 */
-		if (w5500_ExecuteSocketCommand(socket, W5500_CR_CONNECT) == 0) {
+		if (w5500_ExecuteSocketCommand(socket, W5500_CR_CONNECT) == CYRET_SUCCESS) {
 			timeout = 0;
 			/* wait for the socket connection to the remote host is established */
 			do {
@@ -218,6 +218,17 @@ uint8 w5500_TcpWaitForConnection( uint8 socket )
 	return CYRET_SUCCESS;
 }
 /* ------------------------------------------------------------------------ */
+/**
+ * \brief Generic transmission of a data block using TCP
+ * \param socket the socket that will be used to send the data
+ * \param *buffer the array of data to be sent using TCP
+ * \param len the length of data to send from the buffer
+ * \param flags control flags for controlling options for transmission
+ *
+ * w5500_TcpSend transmits a block of generic data using TCP through a socket.
+ * the connection must have been previously established in order for the
+ * the function to operate properly, otherwise, no data will be transmitted.
+ */
 uint16 w5500_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 flags)
 {
 	uint16 tx_length;
@@ -281,6 +292,15 @@ uint16 w5500_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 flags)
 	return tx_length;
 }
 /* ------------------------------------------------------------------------ */
+/**
+ * \brief Send an ASCII String using TCP
+ * \param socket the socket to use for sending the data
+ * \param *string ASCII-Z String to send using TCP
+ * \sa w5500_TcpSend
+ * 
+ * w5500_TcpPrint is a wrapper for the TcpSend function to simplify the
+ * transmission of strings, and prompts over the open connection using TCP.
+ */
 void w5500_TcpPrint(uint8 socket, const char *string )
 {
 	uint16 length;
@@ -288,5 +308,95 @@ void w5500_TcpPrint(uint8 socket, const char *string )
 	length = strlen(string);
 	w5500_TcpSend(socket, (uint8*) string,length, 0);
 }
+/* ------------------------------------------------------------------------ */
+uint16 w5500_TcpReceive(uint8 socket, uint8* buffer, uint16 len, uint8 flags)
+{
+	uint16 rx_size;
+	uint16 bytes;
+	uint16 ptr;
+	
+	bytes = 0;
+	/*
+	 * when there is a bad socket, just return 0 bys no matter what.
+	 */
+	if ( W5500_SOCKET_BAD(socket) ) return 0;
+	/*
+	 * Otherwise, read the number of bytes waiting to be read.  When the byte
+	 * count is less than the requested bytes, wait for them to be available
+	 * when the wait flag is set, otherwise, just read the waiting data once.
+	 */
+	do {
+		rx_size = w5500_RxDataReady( socket );
+	}
+	while ( (rx_size < len) && (flags&W5500_TXRX_FLG_WAIT) );
+	/*
+	 * When data is available, begin processing the data
+	 */
+	if (rx_size > 0) {
+		/* 
+		 * calculate the number of bytes to receive using the available data
+		 * and the requested length of data.
+		 */
+		bytes = (rx_size > len) ? len : rx_size;
+		/* Read the starting memory pointer address, and endian correct */
+		w5500_Send( W5500_SREG_RX_RD, W5500_SOCKET_BASE(socket),0,(uint8*)&ptr,2);
+		ptr = CYSWAP_ENDIAN16( ptr );
+		/* Retrieve the data bytes from the W5500 buffer */
+		w5500_Send( ptr, W5500_RX_BASE(socket),0,buffer,bytes);
+		/* 
+		 * Calculate the new buffer pointer location, endian correct, and
+		 * update the pointer register within the W5500 socket registers
+		 */
+		ptr += bytes;
+		ptr = CYSWAP_ENDIAN16( ptr );
+		w5500_Send(W5500_SREG_RX_RD, W5500_SOCKET_BASE(socket),1,(uint8*)&ptr,2);
+		/*
+		 * when all of the available data was read from the message, execute
+		 * the receive command
+		 */
+		//if (bytes >= rx_size) {
+			w5500_ExecuteSocketCommand( socket, W5500_CR_RECV );
+		//}
+	}	
+	return bytes;
+}
+/* ------------------------------------------------------------------------ */
+char w5500_TcpGetChar( uint8 socket )
+{
+	char ch;
+	uint16 len;
+	
+	do {
+		len = w5500_TcpReceive(socket, (uint8*)&ch, 1, 0);
+	}
+	while (len < 1);
+	return ch;
+}
+/* ------------------------------------------------------------------------ */
+int w5500_TcpGetLine( uint8 socket, char *buffer )
+{
+	char ch;
+	int idx;
+	
+	idx = 0;
+	do {
+		ch = w5500_TcpGetChar( socket );
+		if ((ch != '\r') && (ch!='\n') ) {
+			if ( (ch == '\b')||(ch==127) ) {
+				buffer[idx] = 0;
+				idx = (idx == 0)?0:idx-1;
+			}
+			else {
+				buffer[idx++] = ch;
+				buffer[idx] = 0;
+			}
+		}
+	}
+	while ( (ch!='\r')&&(ch!='\n'));
+	buffer[idx] = 0;
+	
+	return idx;
+}
+/* ======================================================================== */
 /** @} */
 /* [] END OF FILE */

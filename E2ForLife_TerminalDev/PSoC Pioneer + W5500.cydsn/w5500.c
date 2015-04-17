@@ -277,7 +277,7 @@ uint16 w5500_RxDataReady( uint8 socket )
 	
 	/* quit on invalid sockets */
 	if (W5500_SOCKET_BAD(socket)) return 0;
-	
+		
 	first = 0;
 	second = 0;
 	do {
