@@ -37,7 +37,7 @@ int main()
 	RED_Write(1);
 	GREEN_Write(1);
 	/* Initialize the w5500 */
-	if (w5500_Start() != CYRET_SUCCESS) {
+	if (w5500_StartEx(NULL,NULL,NULL,"192.168.1.101") != CYRET_SUCCESS) {
 		RED_Write(0);
 		for(;;);
 	}
