@@ -47,26 +47,12 @@
 #define W5500_SOCKET_MEM         ( 2 )
 /* Chip Configuration. Set to the maximum memory available for socket data */
 #define W5500_CHIP_MEM           ( 16 )
+#define W5500_CHIP_SOCKETS       ( 8 )
 /* Chip Configuration (Calculated). This contains the calculated MAX sockets based on available memory */
 #define W5500_MAX_SOCKETS        ( W5500_CHIP_MEM / W5500_SOCKET_MEM )
 	
-#define W5500_SOCKET_BAD(x)      ( (x >= W5500_MAX_SOCKETS)||(w5500_ChipInfo.socketStatus[x] == W5500_SOCKET_AVAILALE) )
+#define W5500_SOCKET_BAD(x)      ( (x >= W5500_MAX_SOCKETS)||(W5500_socketStatus[x] == W5500_SOCKET_AVAILALE) )
 
-typedef struct {
-	char gateway[16];
-	char subnet[16];
-	char mac[18];
-	char ip[18];
-	uint32 flags;
-} w5500_config;
-
-typedef struct {
-	uint32 Gateway;
-	uint32 subnet;
-	uint8 MAC[6];
-	uint32 ip;
-	uint8 socketStatus[W5500_MAX_SOCKETS];
-} w5500_info;
 
 /* ------------------------------------------------------------------------ */
 #define W5500_SOCKET_OPEN           ( 1 )
@@ -217,8 +203,9 @@ typedef struct {
 /* ------------------------------------------------------------------------ */
 void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, uint16 len);
 
-uint8 w5500_Start( void );
-uint8 w5500_StartEx( w5500_config *config );
+cystatus w5500_Start( void );
+cystatus w5500_StartEx( const char *gateway, const char *subnet, const char *mac, const char *ip );
+cystatus w5500_Init( uint8* gateway, uint8* subnet, uint8 *mac, uint8* ip );
 
 uint16 w5500_RxDataReady( uint8 socket );
 uint16 w5500_TxBufferFree( uint8 socket );
@@ -229,12 +216,15 @@ uint8 w5500_SocketSendComplete( uint8 socket );
 uint8 w5500_ExecuteSocketCommand(uint8 socket, uint8 cmd );
 
 
-uint8 w5500_TcpConnected( uint8 sock );
+cystatus w5500_TcpConnected( uint8 sock );
 uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port );
 uint8 w5500_TcpOpenServer(uint16 port);
-uint8 w5500_TcpWaitForConnection( uint8 socket );
+cystatus w5500_TcpWaitForConnection( uint8 socket );
 uint16 w5500_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 flags);
 void w5500_TcpPrint(uint8 socket, const char *string );
+uint16 w5500_TcpReceive(uint8 socket, uint8* buffer, uint16 len, uint8 flags);
+char w5500_TcpGetChar( uint8 socket );
+int w5500_TcpGetLine( uint8 socket, char *buffer );
 
 #endif
 /** @} */

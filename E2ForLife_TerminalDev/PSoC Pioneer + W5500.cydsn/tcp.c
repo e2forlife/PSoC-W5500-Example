@@ -43,7 +43,7 @@
 
 #include "w5500.h"
 
-extern w5500_info w5500_ChipInfo;
+extern uint8 W5500_socketStatus[W5500_MAX_SOCKETS];
 
 /* ------------------------------------------------------------------------ */
 /**
@@ -54,15 +54,11 @@ extern w5500_info w5500_ChipInfo;
  * \returns 0x80 Socket Timeout
  * \returns 0x01 the socket connection is established
  */
-uint8 w5500_TcpConnected( uint8 sock )
+cystatus w5500_TcpConnected( uint8 sock )
 {
 	uint8 status;
 	
-	if (sock > 7) return 0;
-	
-	if (w5500_ChipInfo.socketStatus[sock] == W5500_SOCKET_AVAILALE) {
-		return CYRET_INVALID_STATE;
-	}
+	if (W5500_SOCKET_BAD(sock)) return CYRET_INVALID_STATE;
 	
 	w5500_Send(W5500_SREG_SR,W5500_SOCKET_BASE(sock),0,&status, 1);
 	if (status == W5500_SR_ESTABLISHED) {
@@ -195,7 +191,7 @@ uint8 w5500_TcpOpenServer(uint16 port)
  * Use _TcpConnected for non-blocking scans.
  * \sa _TcpConnected
  */ 
-uint8 w5500_TcpWaitForConnection( uint8 socket )
+cystatus w5500_TcpWaitForConnection( uint8 socket )
 {
 	uint8 status;
 

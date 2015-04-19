@@ -96,18 +96,11 @@
 //	W5500_BLOCK_S7_RXB
 //};
 /* ------------------------------------------------------------------------ */
-const w5500_config w5500_default = {
-	"192.168.1.1",       // Gateway IP address
-	"255.255.255.0",     // Subnet MAsk
-	"00:08:DC:1C:AC:3F", // Device MAC Address
-	"192.168.1.101",     // Device IP address
-	0                    // Flags (TBD)
-};
 
 #define W5500_CS_MASK               ( 1<<0 )
 #define W5500_RESET_DELAY           ( 100 )
 
-w5500_info w5500_ChipInfo;
+uint8 W5500_socketStatus[W5500_MAX_SOCKETS];
 
 /* ------------------------------------------------------------------------ */
 /**
@@ -120,7 +113,7 @@ w5500_info w5500_ChipInfo;
 void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, uint16 len)
 #if !defined(CY_SCB_SPI0_H)
 {
-	uint8 status;
+	//uint8 status;
 	int count;
 	
 	/* wait for SPI operations to complete */
@@ -157,7 +150,7 @@ void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, u
 	count = 3;
 	while ( (count != 0) || (SPI0_GetRxBufferSize() ) ) {
 		if (SPI0_GetRxBufferSize() ) {
-			status = SPI0_ReadRxData();
+			SPI0_ReadRxData();
 			count = (count==0)?0:count-1;
 		}
 		CyDelayUs(5);
@@ -178,7 +171,7 @@ void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, u
 				buffer[count] = SPI0_ReadRxData();
 			}
 			else {
-				status = SPI0_ReadRxData();
+				SPI0_ReadRxData();
 			}
 			++count;
 		}
@@ -197,7 +190,7 @@ void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, u
 	 */
 {
 	int count;
-	uint8 status;
+//	uint8 status;
 	
 	/* wait for SPI operations to complete */
 	while( SPI0_SpiIsBusBusy() != 0) {
@@ -233,7 +226,7 @@ void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, u
 	count = 3;
 	while ( (count != 0) || (SPI0_SpiUartGetRxBufferSize() ) ) {
 		if (SPI0_SpiUartGetRxBufferSize() ) {
-			status = SPI0_SpiUartReadRxData();
+			SPI0_SpiUartReadRxData();
 			count = (count==0)?0:count-1;
 		}
 		CyDelayUs(5);
@@ -254,7 +247,7 @@ void w5500_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, u
 				buffer[count] = SPI0_SpiUartReadRxData();
 			}
 			else {
-				status = SPI0_SpiUartReadRxData();
+				SPI0_SpiUartReadRxData();
 			}
 			++count;
 		}
@@ -331,34 +324,51 @@ void w5500_Reset( void )
 	while ( (status & 0x80) != 0 );
 }
 /* ------------------------------------------------------------------------ */
-uint8 w5500_Init( void )
+cystatus w5500_Init( uint8* gateway, uint8* subnet, uint8* mac, uint8 *ip )
 {
 	int socket;
 	uint8 socket_cfg[14] = { W5500_SOCKET_MEM, W5500_SOCKET_MEM, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-	uint8 chip_config[18];
-	uint8 chip_verify[18];
+	uint8 config[18];
 		
 	/*
 	 * build chip initialization from the default strings set in the
 	 * configuration dialog
 	 */
 	for (socket = 0; socket < 8; ++socket) {
-		w5500_ChipInfo.socketStatus[socket] = W5500_SOCKET_AVAILALE;
+		W5500_socketStatus[socket] = W5500_SOCKET_AVAILALE;
 		/* Send socket register setup to the chip */
 		w5500_Send( W5500_SREG_RXBUF_SIZE, W5500_SOCKET_BASE(socket), 1, &socket_cfg[0], 14);
 	}
 	
-	memcpy( (void*)&chip_config[0], (void*)&w5500_ChipInfo.Gateway, 4);
-	memcpy( (void*)&chip_config[4], (void*)&w5500_ChipInfo.subnet, 4);
-	memcpy( (void*)&chip_config[8], (void*)&w5500_ChipInfo.MAC[0], 6);
-	memcpy( (void*)&chip_config[14], (void*)&w5500_ChipInfo.ip, 4);
+	if ( gateway != NULL) {
+		w5500_Send( W5500_REG_GAR, W5500_BLOCK_COMMON, 1, gateway, 4);
+		w5500_Send( W5500_REG_GAR, W5500_BLOCK_COMMON, 0, config, 4 );
+		for(socket=0;(socket<4)&&(gateway[socket]==config[socket]);++socket);
+		if (socket < 4) return CYRET_BAD_DATA;
+	}
 	
-	w5500_Send(W5500_REG_GAR,W5500_BLOCK_COMMON,1,&chip_config[0], 18);
-	w5500_Send(W5500_REG_GAR,W5500_BLOCK_COMMON,0,&chip_verify[0], 18);
+	if (subnet != NULL) {
+		w5500_Send(W5500_REG_SUBR, W5500_BLOCK_COMMON, 1, subnet, 4);
+		w5500_Send(W5500_REG_SUBR, W5500_BLOCK_COMMON, 0, config, 4);
+		for(socket=0;(socket<4)&&(subnet[socket]==config[socket]);++socket);
+		if (socket < 4) return CYRET_BAD_DATA;
+	}		
+
+	if (mac != NULL) {
+		w5500_Send(W5500_REG_SHAR, W5500_BLOCK_COMMON, 1, mac, 6);
+		w5500_Send(W5500_REG_SHAR, W5500_BLOCK_COMMON, 0, config, 6);
+		for(socket=0;(socket<6)&&(mac[socket]==config[socket]);++socket);
+		if (socket < 6) return CYRET_BAD_DATA;
+	}		
+
+	if (ip != NULL) {
+		w5500_Send(W5500_REG_SIPR, W5500_BLOCK_COMMON, 1, ip, 4);
+		w5500_Send(W5500_REG_SIPR, W5500_BLOCK_COMMON, 0, config, 4);
+		for(socket=0;(socket<4)&&(ip[socket]==config[socket]);++socket);
+		if (socket < 4) return CYRET_BAD_DATA;
+	}		
 	
-	for (socket=0;(socket<18)&&(chip_verify[socket]==chip_config[socket]);++socket);
-	
-	return (socket>=18)?CYRET_SUCCESS : CYRET_BAD_DATA;
+	return CYRET_SUCCESS;
 }
 /* ------------------------------------------------------------------------ */
 /**
@@ -368,9 +378,34 @@ uint8 w5500_Init( void )
  * the default setting as setup by the user in the configuration dialog in the
  * Creator tools.
  */
-uint8 w5500_Start( void )
+cystatus w5500_Start( void )
 {	
-	return w5500_StartEx( (w5500_config*)&w5500_default );
+	uint8 result;
+	uint32 timeout;
+
+	/*
+	 * Wait for initial power-on PLL Lock, and issue a device reset
+	 * to initialize the registers
+	 */
+	CyDelay(W5500_RESET_DELAY);
+		 
+	/*
+	 * Attempt to initialize the device for approx. 1 second. If after
+	 * 1 second there is still a verification failure, return a timeout
+	 * error, otherwise return success!
+	 */
+	do {	
+		w5500_Reset();
+		result = w5500_Init(NULL, NULL, NULL, NULL);
+		if (result != CYRET_SUCCESS) {
+			CyDelay(1);
+			++timeout;
+			result = CYRET_TIMEOUT;
+		}
+	}
+	while ( (result != CYRET_SUCCESS) && (timeout < 1000) );
+	
+	return result;	
 }
 /* ------------------------------------------------------------------------ */
 /**
@@ -382,19 +417,13 @@ uint8 w5500_Start( void )
  * paramters are stored in the _ChipInfo struct for later use by the driver
  * with no conversions required.
  */
-uint8 w5500_StartEx( w5500_config *config )
+cystatus w5500_StartEx( const char *gateway, const char *subnet, const char *mac, const char *ip )
 {
 	uint8 result;
 	uint32 timeout;
-	
-	/*
-	 * use IoT utlity functions to convert from ASCII data to binary data
-	 * used by the driver, and store it in the ChipInfo for later use.
-	 */
-	w5500_ChipInfo.Gateway = IOT_ParseIP(config->gateway);
-	w5500_ChipInfo.subnet = IOT_ParseIP(config->subnet);
-	IOT_ParseMAC(config->mac, &w5500_ChipInfo.MAC[0] );
-	w5500_ChipInfo.ip = IOT_ParseIP(config->ip);
+	uint32 gar, subr, sipr;
+	uint8 shar[6];
+	uint8 *g, *s, *m, *i;
 	
 	/*
 	 * Wait for initial power-on PLL Lock, and issue a device reset
@@ -403,13 +432,49 @@ uint8 w5500_StartEx( w5500_config *config )
 	CyDelay(W5500_RESET_DELAY);
 	
 	/*
+	 * use IoT utlity functions to convert from ASCII data to binary data
+	 * used by the driver, and store it in the ChipInfo for later use.
+	 */
+	if ((strlen(gateway) > 0 )&&(gateway!=NULL)) {
+		gar = IOT_ParseIP(gateway);
+		g = (uint8*) &gar;
+	}
+	else {
+		g = NULL;
+	}
+	
+	if( (strlen(subnet)>0) &&( subnet !=NULL)) {
+		subr = IOT_ParseIP(subnet);
+		s = (uint8*) &subr;
+	} 
+	else {
+		s = NULL;
+	}
+	
+	if ((strlen(mac)>0) && (mac !=NULL) ) {
+		IOT_ParseMAC(mac, &shar[0] );
+		m = shar;
+	}
+	else {
+		m = NULL;
+	}
+	
+	if ((strlen(ip)>0) && (ip !=NULL) ) {
+		sipr = IOT_ParseIP(ip);
+		i = (uint8*)&sipr;
+	}
+	else {
+		i = NULL;
+	}
+	 
+	/*
 	 * Attempt to initialize the device for approx. 1 second. If after
 	 * 1 second there is still a verification failure, return a timeout
 	 * error, otherwise return success!
 	 */
 	do {	
 		w5500_Reset();
-		result = w5500_Init();
+		result = w5500_Init(g,s,m,i);
 		if (result != CYRET_SUCCESS) {
 			CyDelay(1);
 			++timeout;

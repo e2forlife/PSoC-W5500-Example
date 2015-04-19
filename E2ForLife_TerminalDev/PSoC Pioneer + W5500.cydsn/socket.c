@@ -44,7 +44,7 @@
 
 #include "w5500.h"
 
-extern w5500_info w5500_ChipInfo;
+extern uint8 W5500_socketStatus[W5500_MAX_SOCKETS];
 
 /* ------------------------------------------------------------------------ */
 /**
@@ -106,7 +106,7 @@ uint8 w5500_SocketOpen( uint16 port, uint8 flags)
 	 * available, otherwise flag an error and kick back to the user
 	 */
 	if ( (flags & W5500_PROTO_MACRAW) != 0) {
-		if (w5500_ChipInfo.socketStatus[0] != W5500_SOCKET_AVAILALE) {
+		if (W5500_socketStatus[0] != W5500_SOCKET_AVAILALE) {
 			return 0xFF;
 		}
 		else {
@@ -121,7 +121,7 @@ uint8 w5500_SocketOpen( uint16 port, uint8 flags)
 		 * id in the socket number.
 		 */
 		idx = 1;
-		while ( (idx < W5500_MAX_SOCKETS) && (w5500_ChipInfo.socketStatus[idx] == W5500_SOCKET_OPEN) ) {
+		while ( (idx < W5500_MAX_SOCKETS) && (W5500_socketStatus[idx] == W5500_SOCKET_OPEN) ) {
 			++idx;
 		}
 		if ( idx >= W5500_MAX_SOCKETS ) {
@@ -133,7 +133,7 @@ uint8 w5500_SocketOpen( uint16 port, uint8 flags)
 	 * Now that the socket is identified, declare it as open, then set the mode
 	 * register and issue the socket open command
 	 */
-	w5500_ChipInfo.socketStatus[socket] = W5500_SOCKET_OPEN;
+	W5500_socketStatus[socket] = W5500_SOCKET_OPEN;
 	w5500_Send( W5500_SREG_MR, W5500_SOCKET_BASE(socket), 1, &flags, 1);
 	/*
 	 * Initialize memory pointers for the W5500 device
@@ -147,7 +147,7 @@ uint8 w5500_SocketOpen( uint16 port, uint8 flags)
 	 * condition.
 	 */
 	if (w5500_ExecuteSocketCommand(W5500_CR_OPEN, socket) != 0) {
-		w5500_ChipInfo.socketStatus[socket] = W5500_SOCKET_AVAILALE;
+		W5500_socketStatus[socket] = W5500_SOCKET_AVAILALE;
 		socket = 0xFF;
 	}
 	return socket;
@@ -173,7 +173,7 @@ uint8 w5500_SocketClose( uint8 sock, uint8 discon )
 	/* Trap socket invalid handle errors */
 	if (sock > 7) return CYRET_BAD_PARAM;
 	/* Ignore close requests for sockets that are not open */
-	if (w5500_ChipInfo.socketStatus[sock] == W5500_SOCKET_AVAILALE) return CYRET_BAD_PARAM;
+	if (W5500_socketStatus[sock] == W5500_SOCKET_AVAILALE) return CYRET_BAD_PARAM;
 	
 	/*
 	 * first read the status of the socket from the W5500, and return with an
@@ -181,7 +181,7 @@ uint8 w5500_SocketClose( uint8 sock, uint8 discon )
 	 */
 	w5500_Send(W5500_SREG_SR, W5500_SOCKET_BASE(sock),0,&status,1);
 	if (status == W5500_SR_CLOSED) {
-		w5500_ChipInfo.socketStatus[sock] = W5500_SOCKET_AVAILALE;
+		W5500_socketStatus[sock] = W5500_SOCKET_AVAILALE;
 		return CYRET_CANCELED;
 	}
 	
@@ -195,7 +195,7 @@ uint8 w5500_SocketClose( uint8 sock, uint8 discon )
 	status = w5500_ExecuteSocketCommand( sock, W5500_CR_CLOSE );
 	
 	if (status == CYRET_SUCCESS ) {
-		w5500_ChipInfo.socketStatus[sock] = W5500_SOCKET_AVAILALE;
+		W5500_socketStatus[sock] = W5500_SOCKET_AVAILALE;
 	}
 	/*
 	 * clear pending socket interrupts
