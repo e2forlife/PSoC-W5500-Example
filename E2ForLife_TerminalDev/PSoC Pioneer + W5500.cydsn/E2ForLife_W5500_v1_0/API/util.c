@@ -30,7 +30,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * \file iot.c
+ * \file util.c
  * \author Chuck Erhardt (chuck@e2forlife.com)
  * 
  * Function implementations for IoT utility functions used by the W5500 driver
@@ -39,7 +39,7 @@
 #include <cytypes.h>
 #include <cylib.h>
 
-#include "iot.h"
+#include "`$INSTANCE_NAME`.h"
 
 /* ------------------------------------------------------------------------ */
 #define _HEX2BIN(x) \
@@ -67,8 +67,7 @@
  * sucessful completion a register image of the IP address is returned,
  * otherwise, 0xFFFFFFFF is returned.
  */
-uint32
-IOT_ParseIP( const char* ipString )
+uint32 `$INSTANCE_NAME`_ParseIP( const char* ipString )
 {
 	/*
 	 * Parse a human readable string in to a IP address usable by the hardare
@@ -112,7 +111,7 @@ IOT_ParseIP( const char* ipString )
 		return( 0xFFFFFFFF );
 	}
 	else {
-		return( IOT_IPADDRESS(ip[0], ip[1], ip[2], ip[3]) );
+		return( `$INSTANCE_NAME`_IPADDRESS(ip[0], ip[1], ip[2], ip[3]) );
 	}
 }
 /* ------------------------------------------------------------------------ */
@@ -121,7 +120,7 @@ IOT_ParseIP( const char* ipString )
  * /param *macString Pointer to the ASCII-Z String containing the MAC address
  * /param *mac Pointer to the 6-byte array to hold the output mac addres
  */
-cystatus IOT_ParseMAC(const char *macString, uint8 *mac)
+cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8 *mac)
 {
 	/* 
 	 * a mac address is specified as a string of 6 hex bytes with
@@ -130,7 +129,7 @@ cystatus IOT_ParseMAC(const char *macString, uint8 *mac)
 	 * otherwise, SUCESS is returned.
 	 */
 	int digit;
-	int index;
+	uint16 index;
 	cystatus result;
 	
 	result = CYRET_SUCCESS;
@@ -176,7 +175,7 @@ cystatus IOT_ParseMAC(const char *macString, uint8 *mac)
  * of the harware address.  This is a nice fucntion for displaying a MAC
  * address, but otherwise not really required for functionality
  */
-void IOT_StringMAC(uint8 *mac, char *macString)
+void `$INSTANCE_NAME`_StringMAC(uint8 *mac, char *macString)
 {
 	int digit;
 	int index;
@@ -210,7 +209,7 @@ void IOT_StringMAC(uint8 *mac, char *macString)
  * log file. This is basically just a useful helper function to prevent having
  * to slog through the hex to determine the IP address ehn debugging.
  */
-void IOT_StringIP( uint32 ip, char *ipString )
+void `$INSTANCE_NAME`_StringIP( uint32 ip, char *ipString )
 {
 	uint8 *ipBytes;
 	int index;
@@ -253,8 +252,7 @@ void IOT_StringIP( uint32 ip, char *ipString )
  * This function will encode a buffer of binary data as an ASCII base64 for transmission
  * over a network packet.
  */
-int 
-IOT_base64encode(const void* data_buf, int dataLength, char* result, int resultSize)
+int `$INSTANCE_NAME`_base64encode(const void* data_buf, int dataLength, char* result, int resultSize)
 {
    const char base64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
    const uint8 *dat = (const uint8 *)data_buf;
@@ -347,8 +345,7 @@ IOT_base64encode(const void* data_buf, int dataLength, char* result, int resultS
  * value of 1024 for the maximum woudl have 35 after calling when 35 bytes were
  * decoded from the input string.
  */
-int 
-IOT_base64decode (char *in, int inLen, uint8 *out, int *outLen)
+int `$INSTANCE_NAME`_base64decode (char *in, int inLen, uint8 *out, int *outLen)
 { 
     char *end = in + inLen;
     int buf = 1, len = 0;
@@ -397,6 +394,17 @@ IOT_base64decode (char *in, int inLen, uint8 *out, int *outLen)
  
     *outLen = len; /* modify to reflect the actual output size */
     return 0;
+}
+/* ------------------------------------------------------------------------ */
+uint32 `$INSTANCE_NAME`_IPADDRESS(uint8 x1, uint8 x2, uint8 x3, uint8 x4 )
+{
+	uint32 adr;
+	uint8* ptr;
+	
+	ptr = (uint8*)&adr;
+	ptr[0] = x1; ptr[1] = x2;
+	ptr[2] = x3; ptr[3] = x4;
+	return adr;
 }
 /* ------------------------------------------------------------------------ */
 /**

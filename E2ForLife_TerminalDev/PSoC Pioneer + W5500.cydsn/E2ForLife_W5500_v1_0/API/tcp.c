@@ -41,9 +41,9 @@
 #include <cylib.h>
 #include <string.h>
 
-#include "w5500.h"
+#include "`$INSTANCE_NAME`.h"
 
-extern uint8 W5500_socketStatus[W5500_MAX_SOCKETS];
+extern uint8 `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 
 /* ------------------------------------------------------------------------ */
 /**
@@ -54,21 +54,21 @@ extern uint8 W5500_socketStatus[W5500_MAX_SOCKETS];
  * \returns 0x80 Socket Timeout
  * \returns 0x01 the socket connection is established
  */
-cystatus w5500_TcpConnected( uint8 sock )
+cystatus `$INSTANCE_NAME`_TcpConnected( uint8 sock )
 {
 	uint8 status;
 	
-	if (W5500_SOCKET_BAD(sock)) return CYRET_INVALID_STATE;
+	if (`$INSTANCE_NAME`_SOCKET_BAD(sock)) return CYRET_INVALID_STATE;
 	
-	w5500_Send(W5500_SREG_SR,W5500_SOCKET_BASE(sock),0,&status, 1);
-	if (status == W5500_SR_ESTABLISHED) {
+	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_SR,`$INSTANCE_NAME`_SOCKET_BASE(sock),0,&status, 1);
+	if (status == `$INSTANCE_NAME`_SR_ESTABLISHED) {
 		return CYRET_SUCCESS;
 	}
 	else {
-		w5500_Send(W5500_SREG_IR, W5500_SOCKET_BASE(sock),0,&status, 1);
-		if ( (status & W5500_IR_TIMEOUT) != 0) {
+		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_IR, `$INSTANCE_NAME`_SOCKET_BASE(sock),0,&status, 1);
+		if ( (status & `$INSTANCE_NAME`_IR_TIMEOUT) != 0) {
 			status = 0xFF;
-			w5500_Send(W5500_SREG_IR, W5500_SOCKET_BASE(sock),1,&status,1);
+			`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_IR, `$INSTANCE_NAME`_SOCKET_BASE(sock),1,&status,1);
 			return CYRET_TIMEOUT;
 		}
 	}
@@ -85,7 +85,7 @@ cystatus w5500_TcpConnected( uint8 sock )
  *
  *
  */
-uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
+uint8 `$INSTANCE_NAME`_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
 {
 	uint8 socket;
 	uint32 timeout;
@@ -93,12 +93,12 @@ uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
 	uint8 rCfg[6];
 	
 	/* open the socket using the TCP mode */
-	socket = w5500_SocketOpen( port, W5500_PROTO_TCP );
+	socket = `$INSTANCE_NAME`_SocketOpen( port, `$INSTANCE_NAME`_PROTO_TCP );
 
 	/*
 	 * 2.0 Patch: retun immediately upon the detection of a socket that is not open
 	 */
-	if (W5500_SOCKET_BAD(socket) ) return 0xFF;
+	if (`$INSTANCE_NAME`_SOCKET_BAD(socket) ) return 0xFF;
 	if ( (remote_ip != 0xFFFFFFFF) && (remote_ip != 0) ) {
 		/*
 		 * a valid socket was opened, so now we can use the socket handle to
@@ -114,18 +114,18 @@ uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
 		 * Blast out the configuration record all at once to set up the IP and
 		 * port for the remote connection.
 		 */
-		w5500_Send(W5500_SREG_DIPR, W5500_SOCKET_BASE(socket),1,&rCfg[0], 6);
+		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_DIPR, `$INSTANCE_NAME`_SOCKET_BASE(socket),1,&rCfg[0], 6);
 
 		/*
 		 * Execute the connection to the remote server and check for errors
 		 */
-		if (w5500_ExecuteSocketCommand(socket, W5500_CR_CONNECT) == CYRET_SUCCESS) {
+		if (`$INSTANCE_NAME`_ExecuteSocketCommand(socket, `$INSTANCE_NAME`_CR_CONNECT) == CYRET_SUCCESS) {
 			timeout = 0;
 			/* wait for the socket connection to the remote host is established */
 			do {
 				CyDelay(1);
 				++timeout;
-				w5500_Send(W5500_SREG_IR, W5500_SOCKET_BASE(socket), 0, &ir, 1);
+				`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_IR, `$INSTANCE_NAME`_SOCKET_BASE(socket), 0, &ir, 1);
 				if ( (ir & 0x08) != 0 ) {
 					/* internal chip timeout occured */
 					timeout = 3000;
@@ -134,7 +134,7 @@ uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
 			while ( ((ir&0x01) == 0)  && (timeout < 3000) );
 		}
 		else {
-			w5500_SocketClose(socket,0);
+			`$INSTANCE_NAME`_SocketClose(socket,0);
 			socket = 0xFF;
 		}
 	}
@@ -153,28 +153,28 @@ uint8 w5500_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
  * connect when a valid SYN packet is received.
  * \sa _SocketOpen
  */
-uint8 w5500_TcpOpenServer(uint16 port)
+uint8 `$INSTANCE_NAME`_TcpOpenServer(uint16 port)
 {
 	uint8 socket;
 	uint8 status;
 	
 	/* open the socket using the TCP mode */
-	socket = w5500_SocketOpen( port, W5500_PROTO_TCP );
+	socket = `$INSTANCE_NAME`_SocketOpen( port, `$INSTANCE_NAME`_PROTO_TCP );
 
 	/*
 	 * 2.0 Patch: retun immediately upon the detection of a socket that is not open
 	 */
-	if ( W5500_SOCKET_BAD(socket)) return 0xFF;
+	if ( `$INSTANCE_NAME`_SOCKET_BAD(socket)) return 0xFF;
 	
-	w5500_Send(W5500_SREG_SR,W5500_SOCKET_BASE(socket),0,&status,1);
-	if (status != W5500_SR_INIT) {
+	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_SR,`$INSTANCE_NAME`_SOCKET_BASE(socket),0,&status,1);
+	if (status != `$INSTANCE_NAME`_SR_INIT) {
 		/*
 		 * Error opening socket
 		 */
-		w5500_SocketClose(socket,0);
+		`$INSTANCE_NAME`_SocketClose(socket,0);
 	}
-	else if (w5500_ExecuteSocketCommand( socket, W5500_CR_LISTEN) != CYRET_SUCCESS) {
-		w5500_SocketClose( socket, 0);
+	else if (`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_LISTEN) != CYRET_SUCCESS) {
+		`$INSTANCE_NAME`_SocketClose( socket, 0);
 		socket = 0xFF;
 	}
 	
@@ -191,7 +191,7 @@ uint8 w5500_TcpOpenServer(uint16 port)
  * Use _TcpConnected for non-blocking scans.
  * \sa _TcpConnected
  */ 
-cystatus w5500_TcpWaitForConnection( uint8 socket )
+cystatus `$INSTANCE_NAME`_TcpWaitForConnection( uint8 socket )
 {
 	uint8 status;
 
@@ -200,16 +200,16 @@ cystatus w5500_TcpWaitForConnection( uint8 socket )
 	 * to prevent calling functions and waiting for the timeout for sockets
 	 * that are not yet open
 	 */
-	if (W5500_SOCKET_BAD(socket)) return CYRET_BAD_PARAM;
+	if (`$INSTANCE_NAME`_SOCKET_BAD(socket)) return CYRET_BAD_PARAM;
 	/*
 	 * Wait for the connectino to be established, or a timeout on the connection
 	 * delay to occur.
 	 */
 	do {
 		CyDelay(10);
-		w5500_Send(W5500_SREG_SR,W5500_SOCKET_BASE(socket),0,&status, 1);
+		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_SR,`$INSTANCE_NAME`_SOCKET_BASE(socket),0,&status, 1);
 	}
-	while ( status == W5500_SR_LISTEN );
+	while ( status == `$INSTANCE_NAME`_SR_LISTEN );
 		
 	return CYRET_SUCCESS;
 }
@@ -221,11 +221,11 @@ cystatus w5500_TcpWaitForConnection( uint8 socket )
  * \param len the length of data to send from the buffer
  * \param flags control flags for controlling options for transmission
  *
- * w5500_TcpSend transmits a block of generic data using TCP through a socket.
+ * `$INSTANCE_NAME`_TcpSend transmits a block of generic data using TCP through a socket.
  * the connection must have been previously established in order for the
  * the function to operate properly, otherwise, no data will be transmitted.
  */
-uint16 w5500_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 flags)
+uint16 `$INSTANCE_NAME`_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 flags)
 {
 	uint16 tx_length;
 	uint16 max_packet;
@@ -233,17 +233,17 @@ uint16 w5500_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 flags)
 	uint16 ptr;
 	uint8 result;
 	
-	if (W5500_SOCKET_BAD(socket) ) return 0;
+	if (`$INSTANCE_NAME`_SOCKET_BAD(socket) ) return 0;
 	
-	tx_length = w5500_TxBufferFree( socket );
-	if ( (tx_length < len ) && ((flags&W5500_TXRX_FLG_WAIT) != 0) ) {
+	tx_length = `$INSTANCE_NAME`_TxBufferFree( socket );
+	if ( (tx_length < len ) && ((flags&`$INSTANCE_NAME`_TXRX_FLG_WAIT) != 0) ) {
 		/* 
 		 * there is not enough room in the buffer, but the caller requested
 		 * this to block until there was free space. So, check the memory
 		 * size to determine if the tx buffer is big enough to handle the
 		 * data block without fragmentation.
 		 */
-		w5500_Send(W5500_SREG_TXBUF_SIZE, W5500_SOCKET_BASE(socket),0,&buf_size,1);
+		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_TXBUF_SIZE, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,&buf_size,1);
 		max_packet = (buf_size == 0)? 0 : (0x400 << (buf_size-1));
 		/*
 		 * now that we know the max buffer size, if it is smaller than the
@@ -252,7 +252,7 @@ uint16 w5500_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 flags)
 		if (max_packet < len ) return 0;
 		/* otherwise, we will wait for the room in the buffer */
 		do {
-			tx_length = w5500_TxBufferFree( socket );
+			tx_length = `$INSTANCE_NAME`_TxBufferFree( socket );
 		}
 		while ( tx_length < len );
 	}
@@ -265,22 +265,22 @@ uint16 w5500_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 flags)
 	 * write data from the pointer forward, lastly update the pointer and issue
 	 * the SEND command.
 	 */
-	w5500_Send( W5500_SREG_TX_WR, W5500_SOCKET_BASE(socket),0,(uint8*)&ptr,2);
+	`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&ptr,2);
 	ptr = CYSWAP_ENDIAN16( ptr );
-	w5500_Send( ptr, W5500_TX_BASE(socket),1,buffer,tx_length);
+	`$INSTANCE_NAME`_Send( ptr, `$INSTANCE_NAME`_TX_BASE(socket),1,buffer,tx_length);
 	ptr += tx_length;
 	ptr = CYSWAP_ENDIAN16( ptr );
-	w5500_Send(W5500_SREG_TX_WR, W5500_SOCKET_BASE(socket),1,(uint8*)&ptr,2);
+	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE(socket),1,(uint8*)&ptr,2);
 	
-	w5500_ExecuteSocketCommand( socket, W5500_CR_SEND );
+	`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_SEND );
 	
-	if ( (flags & W5500_TXRX_FLG_WAIT) != 0) {
+	if ( (flags & `$INSTANCE_NAME`_TXRX_FLG_WAIT) != 0) {
 		/*
 		 * block until send is complete
 		 */
 		do {
 			CyDelay(1);
-			result = w5500_SocketSendComplete(socket);
+			result = `$INSTANCE_NAME`_SocketSendComplete(socket);
 		}
 		while( (result != CYRET_FINISHED) && (result != CYRET_CANCELED) );
 	}
@@ -292,20 +292,20 @@ uint16 w5500_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 flags)
  * \brief Send an ASCII String using TCP
  * \param socket the socket to use for sending the data
  * \param *string ASCII-Z String to send using TCP
- * \sa w5500_TcpSend
+ * \sa `$INSTANCE_NAME`_TcpSend
  * 
- * w5500_TcpPrint is a wrapper for the TcpSend function to simplify the
+ * `$INSTANCE_NAME`_TcpPrint is a wrapper for the TcpSend function to simplify the
  * transmission of strings, and prompts over the open connection using TCP.
  */
-void w5500_TcpPrint(uint8 socket, const char *string )
+void `$INSTANCE_NAME`_TcpPrint(uint8 socket, const char *string )
 {
 	uint16 length;
 	
 	length = strlen(string);
-	w5500_TcpSend(socket, (uint8*) string,length, 0);
+	`$INSTANCE_NAME`_TcpSend(socket, (uint8*) string,length, 0);
 }
 /* ------------------------------------------------------------------------ */
-uint16 w5500_TcpReceive(uint8 socket, uint8* buffer, uint16 len, uint8 flags)
+uint16 `$INSTANCE_NAME`_TcpReceive(uint8 socket, uint8* buffer, uint16 len, uint8 flags)
 {
 	uint16 rx_size;
 	uint16 bytes;
@@ -315,16 +315,16 @@ uint16 w5500_TcpReceive(uint8 socket, uint8* buffer, uint16 len, uint8 flags)
 	/*
 	 * when there is a bad socket, just return 0 bys no matter what.
 	 */
-	if ( W5500_SOCKET_BAD(socket) ) return 0;
+	if ( `$INSTANCE_NAME`_SOCKET_BAD(socket) ) return 0;
 	/*
 	 * Otherwise, read the number of bytes waiting to be read.  When the byte
 	 * count is less than the requested bytes, wait for them to be available
 	 * when the wait flag is set, otherwise, just read the waiting data once.
 	 */
 	do {
-		rx_size = w5500_RxDataReady( socket );
+		rx_size = `$INSTANCE_NAME`_RxDataReady( socket );
 	}
-	while ( (rx_size < len) && (flags&W5500_TXRX_FLG_WAIT) );
+	while ( (rx_size < len) && (flags&`$INSTANCE_NAME`_TXRX_FLG_WAIT) );
 	/*
 	 * When data is available, begin processing the data
 	 */
@@ -335,48 +335,48 @@ uint16 w5500_TcpReceive(uint8 socket, uint8* buffer, uint16 len, uint8 flags)
 		 */
 		bytes = (rx_size > len) ? len : rx_size;
 		/* Read the starting memory pointer address, and endian correct */
-		w5500_Send( W5500_SREG_RX_RD, W5500_SOCKET_BASE(socket),0,(uint8*)&ptr,2);
+		`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_RX_RD, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&ptr,2);
 		ptr = CYSWAP_ENDIAN16( ptr );
 		/* Retrieve the data bytes from the W5500 buffer */
-		w5500_Send( ptr, W5500_RX_BASE(socket),0,buffer,bytes);
+		`$INSTANCE_NAME`_Send( ptr, `$INSTANCE_NAME`_RX_BASE(socket),0,buffer,bytes);
 		/* 
 		 * Calculate the new buffer pointer location, endian correct, and
 		 * update the pointer register within the W5500 socket registers
 		 */
 		ptr += bytes;
 		ptr = CYSWAP_ENDIAN16( ptr );
-		w5500_Send(W5500_SREG_RX_RD, W5500_SOCKET_BASE(socket),1,(uint8*)&ptr,2);
+		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_RX_RD, `$INSTANCE_NAME`_SOCKET_BASE(socket),1,(uint8*)&ptr,2);
 		/*
 		 * when all of the available data was read from the message, execute
 		 * the receive command
 		 */
 		//if (bytes >= rx_size) {
-			w5500_ExecuteSocketCommand( socket, W5500_CR_RECV );
+			`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_RECV );
 		//}
 	}	
 	return bytes;
 }
 /* ------------------------------------------------------------------------ */
-char w5500_TcpGetChar( uint8 socket )
+char `$INSTANCE_NAME`_TcpGetChar( uint8 socket )
 {
 	char ch;
 	uint16 len;
 	
 	do {
-		len = w5500_TcpReceive(socket, (uint8*)&ch, 1, 0);
+		len = `$INSTANCE_NAME`_TcpReceive(socket, (uint8*)&ch, 1, 0);
 	}
 	while (len < 1);
 	return ch;
 }
 /* ------------------------------------------------------------------------ */
-int w5500_TcpGetLine( uint8 socket, char *buffer )
+int `$INSTANCE_NAME`_TcpGetLine( uint8 socket, char *buffer )
 {
 	char ch;
 	int idx;
 	
 	idx = 0;
 	do {
-		ch = w5500_TcpGetChar( socket );
+		ch = `$INSTANCE_NAME`_TcpGetChar( socket );
 		if ((ch != '\r') && (ch!='\n') ) {
 			if ( (ch == '\b')||(ch==127) ) {
 				buffer[idx] = 0;

@@ -2,7 +2,7 @@
 <blockRegMap version="1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://cypress.com/xsd/cyblockregmap cyblockregmap.xsd" xmlns="http://cypress.com/xsd/cyblockregmap">
   <block name="GREEN" BASE="0x0" SIZE="0x0" desc="" visible="true" />
   <block name="RED" BASE="0x0" SIZE="0x0" desc="" visible="true" />
-  <block name="BLUE" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="w5500" BASE="0x0" SIZE="0x0" desc="" visible="true" />
   <block name="ETH_CSN" BASE="0x0" SIZE="0x0" desc="" visible="true" />
   <block name="SPI0" BASE="0x0" SIZE="0x0" desc="Serial Communication Block" visible="true">
     <block name="clock_VM" BASE="0x0" SIZE="0x0" desc="" visible="true" />
@@ -354,4 +354,5 @@
       <field name="BREAK_DETECT" from="11" to="11" access="RW" resetVal="" desc="Logical and of corresponding request and mask bits" />
     </register>
   </block>
+  <block name="BLUE" BASE="0x0" SIZE="0x0" desc="" visible="true" />
 </blockRegMap>
