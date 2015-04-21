@@ -379,31 +379,9 @@ cystatus `$INSTANCE_NAME`_Init( uint8* gateway, uint8* subnet, uint8* mac, uint8
  */
 cystatus `$INSTANCE_NAME`_Start( void )
 {	
-	uint8 result;
-	uint32 timeout;
-
-	/*
-	 * Wait for initial power-on PLL Lock, and issue a device reset
-	 * to initialize the registers
-	 */
-	CyDelay(`$INSTANCE_NAME`_RESET_DELAY);
-		 
-	/*
-	 * Attempt to initialize the device for approx. 1 second. If after
-	 * 1 second there is still a verification failure, return a timeout
-	 * error, otherwise return success!
-	 */
-	do {	
-		`$INSTANCE_NAME`_Reset();
-		result = `$INSTANCE_NAME`_Init(NULL, NULL, NULL, NULL);
-		if (result != CYRET_SUCCESS) {
-			CyDelay(1);
-			++timeout;
-			result = CYRET_TIMEOUT;
-		}
-	}
-	while ( (result != CYRET_SUCCESS) && (timeout < 1000) );
+	cystatus result;
 	
+	result = `$INSTANCE_NAME`_StartEx("`$GATEWAY`","`$SUBNET`","`$MAC`","`$IP`");
 	return result;	
 }
 /* ------------------------------------------------------------------------ */
@@ -496,7 +474,77 @@ uint32 `$INSTANCE_NAME`_GetIp( void )
 	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON,0,(uint8*)&ipr,4);
 	return ipr;
 }
-
+/* ------------------------------------------------------------------------ */
+uint16 `$INSTANCE_NAME`_GetTxLength(uint8 socket, uint16 len, uint8 flags)
+{
+	uint16 tx_length;
+	uint16 max_packet;
+	uint8 buf_size;
+	
+	if (`$INSTANCE_NAME`_SOCKET_BAD(socket) ) return 0;
+	
+	tx_length = `$INSTANCE_NAME`_TxBufferFree( socket );
+	if ( (tx_length < len ) && ((flags&`$INSTANCE_NAME`_TXRX_FLG_WAIT) != 0) ) {
+		/* 
+		 * there is not enough room in the buffer, but the caller requested
+		 * this to block until there was free space. So, check the memory
+		 * size to determine if the tx buffer is big enough to handle the
+		 * data block without fragmentation.
+		 */
+		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_TXBUF_SIZE, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,&buf_size,1);
+		max_packet = (buf_size == 0)? 0 : (0x400 << (buf_size-1));
+		/*
+		 * now that we know the max buffer size, if it is smaller than the
+		 * requested transmit lenght, we have an error, so return 0
+		 */
+		if (max_packet < len ) return 0;
+		/* otherwise, we will wait for the room in the buffer */
+		do {
+			tx_length = `$INSTANCE_NAME`_TxBufferFree( socket );
+		}
+		while ( tx_length < len );
+	}
+	else {
+		tx_length = len;
+	}
+	
+	return tx_length;
+}
+/* ------------------------------------------------------------------------ */
+cystatus `$INSTANCE_NAME`_WriteTxData(uint8 socket, uint8 *buffer, uint16 tx_length, uint8 flags)
+{
+	uint16 ptr;
+	cystatus result;
+	
+		/*
+	 * The length of the Tx data block has now been determined, and can be
+	 * copied in to the W5500 buffer memory. First read the pointer, then
+	 * write data from the pointer forward, lastly update the pointer and issue
+	 * the SEND command.
+	 */
+	`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&ptr,2);
+	ptr = CYSWAP_ENDIAN16( ptr );
+	`$INSTANCE_NAME`_Send( ptr, `$INSTANCE_NAME`_TX_BASE(socket),1,buffer,tx_length);
+	ptr += tx_length;
+	ptr = CYSWAP_ENDIAN16( ptr );
+	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE(socket),1,(uint8*)&ptr,2);
+	
+	`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_SEND );
+	result = `$INSTANCE_NAME`_SocketSendComplete(socket);
+	
+	if ( (flags & `$INSTANCE_NAME`_TXRX_FLG_WAIT) != 0) {
+		/*
+		 * block until send is complete
+		 */
+		do {
+			CyDelay(1);
+			result = `$INSTANCE_NAME`_SocketSendComplete(socket);
+		}
+		while( (result != CYRET_FINISHED) && (result != CYRET_CANCELED) );
+	}
+	
+	return result;
+}
 /* ======================================================================== */
 /** @} */
 /* [] END OF FILE */

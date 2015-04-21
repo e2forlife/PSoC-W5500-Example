@@ -325,6 +325,7 @@ uint16 `$INSTANCE_NAME`_TcpReceive(uint8 socket, uint8* buffer, uint16 len, uint
 		rx_size = `$INSTANCE_NAME`_RxDataReady( socket );
 	}
 	while ( (rx_size < len) && (flags&`$INSTANCE_NAME`_TXRX_FLG_WAIT) );
+	
 	/*
 	 * When data is available, begin processing the data
 	 */
@@ -350,9 +351,7 @@ uint16 `$INSTANCE_NAME`_TcpReceive(uint8 socket, uint8* buffer, uint16 len, uint
 		 * when all of the available data was read from the message, execute
 		 * the receive command
 		 */
-		//if (bytes >= rx_size) {
-			`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_RECV );
-		//}
+		`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_RECV );
 	}	
 	return bytes;
 }

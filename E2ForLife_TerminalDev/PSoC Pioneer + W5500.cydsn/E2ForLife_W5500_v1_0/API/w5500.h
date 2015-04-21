@@ -210,6 +210,8 @@ cystatus `$INSTANCE_NAME`_StartEx( const char *gateway, const char *subnet, cons
 cystatus `$INSTANCE_NAME`_Init( uint8* gateway, uint8* subnet, uint8 *mac, uint8* ip );
 void `$INSTANCE_NAME`_GetMac(uint8* mac);
 uint32 `$INSTANCE_NAME`_GetIp( void );
+uint16 `$INSTANCE_NAME`_GetTxLength(uint8 socket, uint16 len, uint8 flags);
+cystatus `$INSTANCE_NAME`_WriteTxData(uint8 socket, uint8 *buffer, uint16 tx_length, uint8 flags);
 
 uint16 `$INSTANCE_NAME`_RxDataReady( uint8 socket );
 uint16 `$INSTANCE_NAME`_TxBufferFree( uint8 socket );
@@ -228,6 +230,11 @@ void `$INSTANCE_NAME`_TcpPrint(uint8 socket, const char *string );
 uint16 `$INSTANCE_NAME`_TcpReceive(uint8 socket, uint8* buffer, uint16 len, uint8 flags);
 char `$INSTANCE_NAME`_TcpGetChar( uint8 socket );
 int `$INSTANCE_NAME`_TcpGetLine( uint8 socket, char *buffer );
+
+uint8 `$INSTANCE_NAME`_UdpOpen( uint16 port );
+uint16 `$INSTANCE_NAME`_UdpSend(uint8 socket, uint32 ip, uint16 port, uint8 *buffer, uint16 len, uint8 flags);
+uint16 `$INSTANCE_NAME`_UdpReceive(uint8 socket, uint8 *header, uint8 *buffer, uint16 len, uint8 flags);
+
 
 uint32 `$INSTANCE_NAME`_ParseIP( const char* ipString );
 cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8 *mac);
