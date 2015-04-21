@@ -98,6 +98,7 @@ uint16 `$INSTANCE_NAME`_UdpReceive(uint8 socket, uint8 *header, uint8 *buffer, u
 	uint16 bytes;
 	uint16 ptr;
 	
+	bytes = 0;
 	/*
 	 * request the length of the data block available for reading, but, add
 	 * the header size (8 bytes) to the length of data requested to account

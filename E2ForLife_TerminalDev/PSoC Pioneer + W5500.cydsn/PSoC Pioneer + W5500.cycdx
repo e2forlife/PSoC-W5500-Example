@@ -1,9 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <blockRegMap version="1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://cypress.com/xsd/cyblockregmap cyblockregmap.xsd" xmlns="http://cypress.com/xsd/cyblockregmap">
-  <block name="GREEN" BASE="0x0" SIZE="0x0" desc="" visible="true" />
-  <block name="RED" BASE="0x0" SIZE="0x0" desc="" visible="true" />
-  <block name="w5500" BASE="0x0" SIZE="0x0" desc="" visible="true" />
-  <block name="ETH_CSN" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="cy_constant_2" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="cy_constant_1" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="clkRG" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="B" BASE="0x0" SIZE="0x0" desc="PrISM" visible="true">
+    <register name="PrISM_SEED" address="0x400F0003" bitWidth="8" desc="Current seed value" />
+    <register name="PrISM_POLYNOM" address="0x400F0013" bitWidth="8" desc="Polynomial" />
+    <register name="PrISM_DENSITY0" address="0x400F0023" bitWidth="8" desc="Pulse Density 0" />
+    <register name="PrISM_DENSITY1" address="0x400F0033" bitWidth="8" desc="Pulse Density 1" />
+    <register name="PrISM_SEED_COPY" address="0x400F0043" bitWidth="8" desc="Start seed value" />
+    <register name="PrISM_CONTROL" address="0x400F0073" bitWidth="3" desc="Control register">
+      <field name="compare type1" from="2" to="2" access="RW" resetVal="" desc="XX" />
+      <field name="compare type0" from="1" to="1" access="RW" resetVal="" desc="" />
+      <field name="ctrl enable" from="0" to="0" access="RW" resetVal="" desc="" />
+    </register>
+  </block>
+  <block name="cy_constant_4" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="cy_constant_3" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="clkRG_1" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="BLUE" BASE="0x0" SIZE="0x0" desc="" visible="true" />
   <block name="SPI0" BASE="0x0" SIZE="0x0" desc="Serial Communication Block" visible="true">
     <block name="clock_VM" BASE="0x0" SIZE="0x0" desc="" visible="true" />
     <block name="rx_wake_VM" BASE="0x0" SIZE="0x0" desc="" visible="true" />
@@ -354,5 +369,20 @@
       <field name="BREAK_DETECT" from="11" to="11" access="RW" resetVal="" desc="Logical and of corresponding request and mask bits" />
     </register>
   </block>
-  <block name="BLUE" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="ETH_CSN" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="GREEN" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="RG" BASE="0x0" SIZE="0x0" desc="PrISM" visible="true">
+    <register name="PrISM_SEED" address="0x400F0002" bitWidth="8" desc="Current seed value" />
+    <register name="PrISM_POLYNOM" address="0x400F0012" bitWidth="8" desc="Polynomial" />
+    <register name="PrISM_DENSITY0" address="0x400F0022" bitWidth="8" desc="Pulse Density 0" />
+    <register name="PrISM_DENSITY1" address="0x400F0032" bitWidth="8" desc="Pulse Density 1" />
+    <register name="PrISM_SEED_COPY" address="0x400F0042" bitWidth="8" desc="Start seed value" />
+    <register name="PrISM_CONTROL" address="0x400F0072" bitWidth="3" desc="Control register">
+      <field name="compare type1" from="2" to="2" access="RW" resetVal="" desc="XX" />
+      <field name="compare type0" from="1" to="1" access="RW" resetVal="" desc="" />
+      <field name="ctrl enable" from="0" to="0" access="RW" resetVal="" desc="" />
+    </register>
+  </block>
+  <block name="w5500" BASE="0x0" SIZE="0x0" desc="" visible="true" />
+  <block name="RED" BASE="0x0" SIZE="0x0" desc="" visible="true" />
 </blockRegMap>

@@ -98,6 +98,8 @@ uint8 `$INSTANCE_NAME`_SocketOpen( uint16 port, uint8 flags)
 {
 	uint8 socket;
 	int idx;
+//	uint16 sz;
+//	uint16 ptr;
 	
 	/* default the socket to the error condition */
 	socket = 0xFF;
@@ -150,6 +152,14 @@ uint8 `$INSTANCE_NAME`_SocketOpen( uint16 port, uint8 flags)
 		`$INSTANCE_NAME`_socketStatus[socket] = `$INSTANCE_NAME`_SOCKET_AVAILALE;
 		socket = 0xFF;
 	}
+	
+//	sz = `$INSTANCE_NAME`_RxDataReady(socket);
+//	if (sz > 0) {
+//		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_RX_RD,`$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&ptr,2);
+//		ptr += sz;
+//		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_RX_RD,`$INSTANCE_NAME`_SOCKET_BASE(socket),1,(uint8*)&ptr,2);
+//		`$INSTANCE_NAME`_ExecuteSocketCommand(`$INSTANCE_NAME`_CR_RECV, socket);
+//	}
 	return socket;
 }
 /* ------------------------------------------------------------------------- */

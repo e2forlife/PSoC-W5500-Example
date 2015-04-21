@@ -18,6 +18,8 @@ uint16 ETH_GetChar( void );
 void ETH_PutString( const char *str );
 
 char str[256];
+uint8 udpHeader[19];
+uint8 buffer[255];
 
 /* ------------------------------------------------------------------------ */
 int main()
@@ -35,55 +37,31 @@ int main()
 	 */
 	ETH_CSN_Write(1);
 	SPI0_Start();
-	BLUE_Write(0);
-	RED_Write(1);
-	GREEN_Write(1);
+	RG_Start();
+	B_Start();
+	B_WritePulse0(255);
+	RG_WritePulse0(255);
+	RG_WritePulse1(255);
+	
 	/* Initialize the w5500 */
-	if (w5500_StartEx(NULL,"255.255.255.0","00:08:DC:1C:AC:3F","192.168.1.101") != CYRET_SUCCESS) {
-		RED_Write(0);
+	if (w5500_Start() != CYRET_SUCCESS) {
 		for(;;);
+		RG_WritePulse0(0);
+		RG_WritePulse1(255);
+		B_WritePulse0(255);
 	}
 	
-	socket = w5500_TcpOpenServer( 23 );
-	w5500_TcpWaitForConnection( socket );
-	GREEN_Write(0);
-	BLUE_Write(1);
-	RED_Write(1);
-	w5500_TcpPrint( socket, "Hello World!\r\nMAC: ");
-	w5500_GetMac(&mac[0]);
-	w5500_StringMAC(mac,str);
-	w5500_TcpPrint(socket, str);
-	w5500_TcpPrint(socket, "\r\nIP: ");
-	w5500_StringIP(w5500_GetIp(),str);
-	w5500_TcpPrint(socket,str);
-	w5500_TcpPrint(socket,"\r\nGateway: ");
-	w5500_Send(w5500_REG_GAR, w5500_BLOCK_COMMON,0,(uint8*)&ip,4);
-	w5500_StringIP(ip,str);
-	w5500_TcpPrint(socket,str);
-	w5500_TcpPrint(socket,"\r\nSubnet Mask: ");
-	w5500_Send(w5500_REG_SUBR,w5500_BLOCK_COMMON,0,(uint8*)&ip,4);
-	w5500_StringIP(ip,str);
-	w5500_TcpPrint(socket,str);
-	w5500_TcpPrint(socket,"\r\n\n");
-	
-	data = w5500_RxDataReady(socket);
-	w5500_TcpReceive(socket, (uint8*)&str[0], data, 0);
-	
-	while (w5500_SocketSendComplete(socket) == 0) {
-		CyDelay(1);
-	}
-	
-	while(1) {
-		w5500_TcpGetLine(socket, &str[0]);
-		w5500_TcpPrint(socket, "\r\n\n");
-		w5500_TcpPrint( socket, str );
-	}
-	w5500_SocketClose( socket, 1 );
-	
+	socket = w5500_UdpOpen(8800);
+
     /* CyGlobalIntEnable; */ /* Uncomment this line to enable global interrupts. */
     for(;;)
     {
-        /* Place your application code here. */
+		data = w5500_UdpReceive(socket,udpHeader,buffer,255,0);
+		if (data > 0) {
+			RG_WritePulse0(~buffer[0]);
+			RG_WritePulse1(~buffer[1]);
+			B_WritePulse0(~buffer[2]);
+		}
     }
 }
 
