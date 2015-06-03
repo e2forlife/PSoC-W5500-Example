@@ -58,7 +58,7 @@ cystatus `$INSTANCE_NAME`_TcpConnected( uint8 sock )
 {
 	uint8 status;
 	
-	if (`$INSTANCE_NAME`_SOCKET_BAD(sock)) return CYRET_INVALID_STATE;
+	if (`$INSTANCE_NAME`_SOCKET_BAD(sock)) return CYRET_BAD_PARAM;
 	
 	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_SR,`$INSTANCE_NAME`_SOCKET_BASE(sock),0,&status, 1);
 	if (status == `$INSTANCE_NAME`_SR_ESTABLISHED) {

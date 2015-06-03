@@ -252,7 +252,7 @@ void `$INSTANCE_NAME`_StringIP( uint32 ip, char *ipString )
  * This function will encode a buffer of binary data as an ASCII base64 for transmission
  * over a network packet.
  */
-int `$INSTANCE_NAME`_base64encode(const void* data_buf, int dataLength, char* result, int resultSize)
+int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* result, int resultSize)
 {
    const char base64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
    const uint8 *dat = (const uint8 *)data_buf;
@@ -345,7 +345,7 @@ int `$INSTANCE_NAME`_base64encode(const void* data_buf, int dataLength, char* re
  * value of 1024 for the maximum woudl have 35 after calling when 35 bytes were
  * decoded from the input string.
  */
-int `$INSTANCE_NAME`_base64decode (char *in, int inLen, uint8 *out, int *outLen)
+int `$INSTANCE_NAME`_Base64Decode (char *in, int inLen, uint8 *out, int *outLen)
 { 
     char *end = in + inLen;
     int buf = 1, len = 0;

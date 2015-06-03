@@ -60,7 +60,7 @@ cystatus `$INSTANCE_NAME`_ExecuteSocketCommand(uint8 socket, uint8 cmd )
 	uint8 result;
 	uint32 timeout;
 	
-	if (socket >= `$INSTANCE_NAME`_MAX_SOCKETS) return CYRET_INVALID_OBJECT;
+	if (socket >= `$INSTANCE_NAME`_MAX_SOCKETS) return CYRET_BAD_PARAM;
 	
 	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_CR, `$INSTANCE_NAME`_SOCKET_BASE(socket), 1, &cmd, 1);
 	timeout = 0;

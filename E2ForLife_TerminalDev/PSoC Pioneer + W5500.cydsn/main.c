@@ -11,12 +11,6 @@
 */
 #include <project.h>
 
-//#include "w5500.h"
-
-void ETH_PutChar( char ch );
-uint16 ETH_GetChar( void );
-void ETH_PutString( const char *str );
-
 char str[256];
 uint8 udpHeader[19];
 uint8 buffer[255];
@@ -26,8 +20,6 @@ int main()
 {
 	uint8 socket;
 	uint16 data;
-	uint8 mac[6];
-	uint32 ip;
 	
 	// Wait for IMP reset monitor on the WizIOShield-A board to come out of reset
 	CyDelay(560);
@@ -37,18 +29,14 @@ int main()
 	 */
 	ETH_CSN_Write(1);
 	SPI0_Start();
-	RG_Start();
-	B_Start();
-	B_WritePulse0(255);
-	RG_WritePulse0(255);
-	RG_WritePulse1(255);
+	RED_Write(1);
+	GREEN_Write(1);
+	BLUE_Write(1);
 	
 	/* Initialize the w5500 */
 	if (w5500_Start() != CYRET_SUCCESS) {
+		RED_Write(0);
 		for(;;);
-		RG_WritePulse0(0);
-		RG_WritePulse1(255);
-		B_WritePulse0(255);
 	}
 	
 	socket = w5500_UdpOpen(8800);
@@ -58,9 +46,9 @@ int main()
     {
 		data = w5500_UdpReceive(socket,udpHeader,buffer,255,0);
 		if (data > 0) {
-			RG_WritePulse0(~buffer[0]);
-			RG_WritePulse1(~buffer[1]);
-			B_WritePulse0(~buffer[2]);
+			RED_Write( (buffer[0]!=0)?0:1 );
+			GREEN_Write( (buffer[1]!=0)?0:1 );
+			BLUE_Write( (buffer[0]!=0)?0:1 );
 		}
     }
 }

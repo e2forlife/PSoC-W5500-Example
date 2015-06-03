@@ -240,8 +240,8 @@ uint32 `$INSTANCE_NAME`_ParseIP( const char* ipString );
 cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8 *mac);
 void `$INSTANCE_NAME`_StringMAC(uint8 *mac, char *macString);
 void `$INSTANCE_NAME`_StringIP( uint32 ip, char *ipString );
-int `$INSTANCE_NAME`_base64encode(const void* data_buf, int dataLength, char* result, int resultSize);
-int `$INSTANCE_NAME`_base64decode (char *in, int inLen, uint8 *out, int *outLen);
+int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* result, int resultSize);
+int `$INSTANCE_NAME`_Base64Decode (char *in, int inLen, uint8 *out, int *outLen);
 uint32 `$INSTANCE_NAME`_IPADDRESS(uint8 x1, uint8 x2, uint8 x3, uint8 x4 );
 
 #endif
