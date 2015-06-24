@@ -449,6 +449,7 @@ cystatus `$INSTANCE_NAME`_StartEx( const char *gateway, const char *subnet, cons
 	 * 1 second there is still a verification failure, return a timeout
 	 * error, otherwise return success!
 	 */
+	timeout = 0;
 	do {	
 		`$INSTANCE_NAME`_Reset();
 		result = `$INSTANCE_NAME`_Init(g,s,m,i);
