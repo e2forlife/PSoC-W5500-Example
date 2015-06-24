@@ -136,11 +136,11 @@ cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8 *mac)
 	index = 0;
 	for(digit = 0;(digit<6) && (result == CYRET_SUCCESS)&&(macString[index] != 0);++digit) {
 		// process the first nibble
-		if (isxdigit(macString[index]) ) {
+		if (isxdigit((int)macString[index]) ) {
 			mac[digit] = _HEX2BIN(macString[index]);
 			++index;
 			mac[digit] <<= 4;
-			if (isxdigit(macString[index])) {
+			if (isxdigit((int)macString[index])) {
 				mac[digit] += _HEX2BIN(macString[index]);
 				++index;
 				/*

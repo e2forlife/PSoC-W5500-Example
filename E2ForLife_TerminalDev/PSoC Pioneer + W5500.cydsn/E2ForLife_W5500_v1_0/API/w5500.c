@@ -112,7 +112,7 @@ uint8 `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 void `$INSTANCE_NAME`_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, uint16 len)
 #if !defined(CY_SCB_`$SPI_INSTANCE`_H)
 {
-	//uint8 status;
+	uint8 status;
 	int count;
 	
 	/* wait for SPI operations to complete */

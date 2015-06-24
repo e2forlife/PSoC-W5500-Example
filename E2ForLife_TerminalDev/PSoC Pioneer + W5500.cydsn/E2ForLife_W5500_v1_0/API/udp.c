@@ -58,7 +58,7 @@ uint8 `$INSTANCE_NAME`_UdpOpen( uint16 port )
 		socket = `$INSTANCE_NAME`_SocketOpen(port, `$INSTANCE_NAME`_PROTO_UDP);
 	
 		if (socket < `$INSTANCE_NAME`_MAX_SOCKETS) {
-			w5500_Send(`$INSTANCE_NAME`_SREG_SR, `$INSTANCE_NAME`_SOCKET_BASE(socket), 0, &status, 1);
+			`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_SR, `$INSTANCE_NAME`_SOCKET_BASE(socket), 0, &status, 1);
 			if (status != `$INSTANCE_NAME`_SR_UDP) {
 				`$INSTANCE_NAME`_SocketClose(socket,0);
 				socket = 0xFF;
