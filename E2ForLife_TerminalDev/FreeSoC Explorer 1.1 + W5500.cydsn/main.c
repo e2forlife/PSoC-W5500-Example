@@ -13,12 +13,18 @@
 
 int main()
 {
+	uint8 socket;
+	
     /* Place your initialization/startup code here (e.g. MyInst_Start()) */
-
+	ETH_Start();
+	
     /* CyGlobalIntEnable; */ /* Uncomment this line to enable global interrupts. */
     for(;;)
     {
-        /* Place your application code here. */
+        socket = ETH_TcpOpenServer(23);
+		ETH_TcpWaitForConnection( socket );
+		ETH_TcpPrint(socket, "Hello world!");
+		ETH_SocketDisconnect( socket );
     }
 }
 
