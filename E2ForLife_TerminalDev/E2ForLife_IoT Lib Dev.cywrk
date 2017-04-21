@@ -2,21 +2,22 @@
 <CyXmlSerializer>
 <!--This file is machine generated and read. It is not intended to be edited by hand.-->
 <!--Due to this, there is no schema for this file.-->
-<CyGuid_2867d519-54d2-4c01-9830-c51cb08bc3dd type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtWrkspc" version="5" xml_contents_version="3" name="E2ForLife_IoT Lib Dev" persistent="" platform="NOT_USED">
-<current_project name=".\FreeSoC Explorer 1.1 + W5500.cydsn\FreeSoC Explorer 1.1 + W5500.cyprj" />
+<CyGuid_2867d519-54d2-4c01-9830-c51cb08bc3dd type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtWorkspaceSerialize" version="5" xml_contents_version="3" name="E2ForLife_IoT Lib Dev" persistent="E2ForLife_IoT Lib Dev.cywrk" platform="NOT_USED">
+<current_project name=".\CY8CKIT-059 + W5500.cydsn\CY8CKIT-059 + W5500.cyprj" />
 <wrkspc_folders />
 <files />
 <projects>
 <v>.\PSoC Pioneer + W5500.cydsn\PSoC Pioneer + W5500.cyprj</v>
 <v>.\FreeSoC Explorer 1.1 + W5500.cydsn\FreeSoC Explorer 1.1 + W5500.cyprj</v>
+<v>.\CY8CKIT-059 + W5500.cydsn\CY8CKIT-059 + W5500.cyprj</v>
 </projects>
 <workspace_id v="b19b13d5-dd63-4b9d-8da0-2277d1320b54" />
-<WriteAppVersionLastSavedWith v="3.1.0.2288" />
-<WriteAppMarketingVersionLastSavedWith v="3.1 SP3" />
-<CyGuid_dcbd9771-0334-43dc-9cc3-fe99dc3c5316 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjDependencyList" version="4">
+<WriteAppVersionLastSavedWith v="4.0.0.432" />
+<WriteAppMarketingVersionLastSavedWith v="4.0 Update 1" />
+<CyGuid_dcbd9771-0334-43dc-9cc3-fe99dc3c5316 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtWorkspaceSerialize+CyPrjDependencyList" version="4">
 <wrkspc_dependencies />
 </CyGuid_dcbd9771-0334-43dc-9cc3-fe99dc3c5316>
-<CyGuid_63b68103-67f5-4406-8da6-5c8625765b82 type_name="CyDesigner.Common.ProjMgmt.Model.CyIgnoredSystemDepsList" version="1">
+<CyGuid_63b68103-67f5-4406-8da6-5c8625765b82 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtWorkspaceSerialize+CyIgnoredSystemDepsList" version="1">
 <wrkspc_dependencies />
 </CyGuid_63b68103-67f5-4406-8da6-5c8625765b82>
 </CyGuid_2867d519-54d2-4c01-9830-c51cb08bc3dd>
