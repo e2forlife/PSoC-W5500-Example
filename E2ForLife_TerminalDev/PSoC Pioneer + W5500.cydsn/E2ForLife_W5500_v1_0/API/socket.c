@@ -40,11 +40,11 @@
  */
 /* ======================================================================== */
 #include <cytypes.h>
-#include <cylib.h>
+#include <CyLib.h>
 
 #include "`$INSTANCE_NAME`.h"
 
-extern uint8 `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
+extern uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 
 /* ------------------------------------------------------------------------ */
 /**
@@ -55,10 +55,10 @@ extern uint8 `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
  * This function writes teh command register then waits for the command
  * register to return a 0. then it returns the last read value.
  */
-cystatus `$INSTANCE_NAME`_ExecuteSocketCommand(uint8 socket, uint8 cmd )
+cystatus `$INSTANCE_NAME`_ExecuteSocketCommand(uint8_t socket, uint8_t cmd )
 {
-	uint8 result;
-	uint32 timeout;
+	uint8_t result;
+	uint32_t timeout;
 	
 	if (socket >= `$INSTANCE_NAME`_MAX_SOCKETS) return CYRET_BAD_PARAM;
 	
@@ -76,6 +76,7 @@ cystatus `$INSTANCE_NAME`_ExecuteSocketCommand(uint8 socket, uint8 cmd )
 	result = (result == 0)? CYRET_SUCCESS : CYRET_TIMEOUT;
 	return result;
 }
+
 /* ------------------------------------------------------------------------ */
 /**
  * \brief Open and initialize a socket for use
@@ -94,15 +95,15 @@ cystatus `$INSTANCE_NAME`_ExecuteSocketCommand(uint8 socket, uint8 cmd )
  *
  * \note the Tx_size and rx_size parameters are ignored and assumed to be 2K
  */
-uint8 `$INSTANCE_NAME`_SocketOpen( uint16 port, uint8 flags)
+uint8_t `$INSTANCE_NAME`_SocketOpen( uint16_t port, uint8_t flags)
 {
-	uint8 socket;
-	int idx;
+    int idx;
+    
+    /* default the socket to the error condition */
+	uint8_t socket = 0xFF;;
+	
 //	uint16 sz;
 //	uint16 ptr;
-	
-	/* default the socket to the error condition */
-	socket = 0xFF;
 	/* 
 	 * If the MACRAW protocol was selected, make sure that socket 0 is
 	 * available, otherwise flag an error and kick back to the user
@@ -162,6 +163,7 @@ uint8 `$INSTANCE_NAME`_SocketOpen( uint16 port, uint8 flags)
 //	}
 	return socket;
 }
+
 /* ------------------------------------------------------------------------- */
 /**
  * \brief Close an open socket
@@ -173,12 +175,10 @@ uint8 `$INSTANCE_NAME`_SocketOpen( uint16 port, uint8 flags)
  *
  * \sa w500_SocketDisconnect
  */
-cystatus `$INSTANCE_NAME`_SocketClose( uint8 sock, uint8 discon )
+cystatus `$INSTANCE_NAME`_SocketClose( uint8_t sock, uint8_t discon )
 {
 	cystatus status;
-	uint8 ir;
-	
-	ir = 0xFF;
+	uint8_t ir = 0xFF;
 	
 	/* Trap socket invalid handle errors */
 	if (sock > 7) return CYRET_BAD_PARAM;
@@ -214,6 +214,7 @@ cystatus `$INSTANCE_NAME`_SocketClose( uint8 sock, uint8 discon )
 	
 	return status;
 }
+
 /* ------------------------------------------------------------------------ */
 /**
  * \brief Close a socket and send the termination sequence to an open connection
@@ -222,17 +223,18 @@ cystatus `$INSTANCE_NAME`_SocketClose( uint8 sock, uint8 discon )
  * \returns 0xFF socket was already closed, or not allocated
  * \retutns uint8 value indicating faulure of the discon command execution
  */
-cystatus `$INSTANCE_NAME`_SocketDisconnect( uint8 sock )
+cystatus `$INSTANCE_NAME`_SocketDisconnect( uint8_t sock )
 {
 	return `$INSTANCE_NAME`_SocketClose( sock, 1);
 }
+
 /* ------------------------------------------------------------------------ */
 /**
  * \brief Check to see if a SEND operation was completed.
  */
-cystatus `$INSTANCE_NAME`_SocketSendComplete( uint8 socket )
+cystatus `$INSTANCE_NAME`_SocketSendComplete( uint8_t socket )
 {
-	uint8 ir;
+	uint8_t ir;
 	cystatus result;
 	
 	if (`$INSTANCE_NAME`_SOCKET_BAD( socket ) ) return CYRET_BAD_PARAM;
@@ -258,5 +260,6 @@ cystatus `$INSTANCE_NAME`_SocketSendComplete( uint8 socket )
 	
 	return result;
 }
+
 /** @} */
 /* [] END OF FILE */

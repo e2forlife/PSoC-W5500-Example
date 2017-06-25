@@ -38,7 +38,7 @@
  * code for the WizNET iW5500 device.
  */
 /* ======================================================================== */
-#include <cylib.h>
+#include <CyLib.h>
 #include <cytypes.h>
 #include <string.h>
 
@@ -96,10 +96,10 @@
 //};
 /* ------------------------------------------------------------------------ */
 
-#define `$INSTANCE_NAME`_CS_MASK               ( 1<<0 )
+#define `$INSTANCE_NAME`_CS_MASK               ( 1 << 0 )
 #define `$INSTANCE_NAME`_RESET_DELAY           ( 100 )
 
-uint8 `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
+uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 
 /* ------------------------------------------------------------------------ */
 /**
@@ -109,16 +109,16 @@ uint8 `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
  * \param buffer pointer to the data to write
  * \param len length of the data to send
  */
-void `$INSTANCE_NAME`_Send(uint16 offset, uint8 block_select, uint8 write, uint8 *buffer, uint16 len)
+void `$INSTANCE_NAME`_Send(uint16_t offset, uint8_t block_select, uint8_t write, uint8_t *buffer, uint16_t len)
 #if !defined(CY_SCB_`$SPI_INSTANCE`_H)
 {
-	uint8 status;
+	uint8_t status;
 	int count;
 	
 	/* wait for SPI operations to complete */
 	do {
 		status = `$SPI_INSTANCE`_ReadTxStatus() & (`$SPI_INSTANCE`_STS_SPI_IDLE|`$SPI_INSTANCE`_STS_SPI_DONE);
-	} while ( status == 0);
+	} while ( status == 0 );
 	
 	/* set write bit in the control phase data */
 	block_select = block_select | ((write!=0)?0x04:0); 
@@ -262,16 +262,16 @@ void `$INSTANCE_NAME`_Send(uint16 offset, uint8 block_select, uint8 write, uint8
 	`$SPI_INSTANCE`_SpiUartClearTxBuffer();
 }
 #endif
+
 /* ------------------------------------------------------------------------ */
-uint16 `$INSTANCE_NAME`_RxDataReady( uint8 socket )
+uint16_t `$INSTANCE_NAME`_RxDataReady( uint8_t socket )
 {
-	uint16 first, second;
+	uint16_t first = 0
+            , second = 0;
 	
 	/* quit on invalid sockets */
 	if (`$INSTANCE_NAME`_SOCKET_BAD(socket)) return 0;
-		
-	first = 0;
-	second = 0;
+
 	do {
 		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_RX_RSR, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&first,2);
 		if (first != 0) {
@@ -282,36 +282,34 @@ uint16 `$INSTANCE_NAME`_RxDataReady( uint8 socket )
 	
 	return CYSWAP_ENDIAN16(second);
 }
+
 /* ------------------------------------------------------------------------ */
-uint16 `$INSTANCE_NAME`_TxBufferFree( uint8 socket )
+uint16_t `$INSTANCE_NAME`_TxBufferFree( uint8_t socket )
 {
-	uint16 first, second;
+	uint16_t first = 0
+            , second = 0;
 	
 	/* quit on invalid sockets */
 	if (`$INSTANCE_NAME`_SOCKET_BAD(socket)) return 0;
-	
-	first = 0;
-	second = 0;
+
 	do {
 		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_TX_FSR, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&first,2);
 		if (first != 0) {
 			`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_TX_FSR, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&second,2);
 		}
 	}
-	while (first != second );
+	while ( first != second );
 	
 	return CYSWAP_ENDIAN16(second);
 }
 /* ------------------------------------------------------------------------ */
 void `$INSTANCE_NAME`_Reset( void )
 {
-	uint8 status;
-	
 	/*
 	 * issue a mode register reset to the W5500 in order to set default
 	 * register contents for the chip.
 	 */
-	status = 0x80;
+	uint8_t status = 0x80;
 	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_MODE,`$INSTANCE_NAME`_BLOCK_COMMON,1, &status, 1);
 	/*
 	 * Wait for the mode register to clear the reset bit, thus indicating
@@ -323,11 +321,11 @@ void `$INSTANCE_NAME`_Reset( void )
 	while ( (status & 0x80) != 0 );
 }
 /* ------------------------------------------------------------------------ */
-cystatus `$INSTANCE_NAME`_Init( uint8* gateway, uint8* subnet, uint8* mac, uint8 *ip )
+cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t* mac, uint8_t *ip )
 {
 	int socket;
-	uint8 socket_cfg[14] = { `$INSTANCE_NAME`_SOCKET_MEM, `$INSTANCE_NAME`_SOCKET_MEM, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-	uint8 config[18];
+	uint8_t socket_cfg[14] = { `$INSTANCE_NAME`_SOCKET_MEM, `$INSTANCE_NAME`_SOCKET_MEM, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	uint8_t config[18];
 		
 	/*
 	 * build chip initialization from the default strings set in the
@@ -378,11 +376,8 @@ cystatus `$INSTANCE_NAME`_Init( uint8* gateway, uint8* subnet, uint8* mac, uint8
  * Creator tools.
  */
 cystatus `$INSTANCE_NAME`_Start( void )
-{	
-	cystatus result;
-	
-	result = `$INSTANCE_NAME`_StartEx("`$GATEWAY`","`$SUBNET`","`$MAC`","`$IP`");
-	return result;	
+{
+	return `$INSTANCE_NAME`_StartEx("`$GATEWAY`","`$SUBNET`","`$MAC`","`$IP`");
 }
 /* ------------------------------------------------------------------------ */
 /**
@@ -463,24 +458,26 @@ cystatus `$INSTANCE_NAME`_StartEx( const char *gateway, const char *subnet, cons
 	
 	return result;
 }
+
 /* ------------------------------------------------------------------------ */
-void `$INSTANCE_NAME`_GetMac(uint8* mac)
+void `$INSTANCE_NAME`_GetMac(uint8_t* mac)
 {
 	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SHAR,`$INSTANCE_NAME`_BLOCK_COMMON,0,mac,6);
 }
+
 /* ------------------------------------------------------------------------ */
-uint32 `$INSTANCE_NAME`_GetIp( void )
+uint32_t `$INSTANCE_NAME`_GetIp( void )
 {
 	uint32 ipr;
 	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON,0,(uint8*)&ipr,4);
 	return ipr;
 }
 /* ------------------------------------------------------------------------ */
-uint16 `$INSTANCE_NAME`_GetTxLength(uint8 socket, uint16 len, uint8 flags)
+uint16_t `$INSTANCE_NAME`_GetTxLength(uint8_t socket, uint16_t len, uint8_t flags)
 {
-	uint16 tx_length;
-	uint16 max_packet;
-	uint8 buf_size;
+	uint16_t tx_length
+            , max_packet;
+	uint8_t buf_size;
 	
 	if (`$INSTANCE_NAME`_SOCKET_BAD(socket) ) return 0;
 	
@@ -511,10 +508,11 @@ uint16 `$INSTANCE_NAME`_GetTxLength(uint8 socket, uint16 len, uint8 flags)
 	
 	return tx_length;
 }
+
 /* ------------------------------------------------------------------------ */
-cystatus `$INSTANCE_NAME`_WriteTxData(uint8 socket, uint8 *buffer, uint16 tx_length, uint8 flags)
+cystatus `$INSTANCE_NAME`_WriteTxData(uint8_t socket, uint8_t *buffer, uint16_t tx_length, uint8_t flags)
 {
-	uint16 ptr;
+	uint16_t ptr;
 	cystatus result;
 	
 		/*
@@ -546,6 +544,7 @@ cystatus `$INSTANCE_NAME`_WriteTxData(uint8 socket, uint8 *buffer, uint16 tx_len
 	
 	return result;
 }
+
 /* ======================================================================== */
 /** @} */
 /* [] END OF FILE */

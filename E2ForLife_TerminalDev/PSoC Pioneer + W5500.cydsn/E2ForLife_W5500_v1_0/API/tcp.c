@@ -38,12 +38,12 @@
  */
 /* ======================================================================== */
 #include <cytypes.h>
-#include <cylib.h>
+#include <CyLib.h>
 #include <string.h>
 
 #include "`$INSTANCE_NAME`.h"
 
-extern uint8 `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
+extern uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 
 /* ------------------------------------------------------------------------ */
 /**
@@ -54,9 +54,9 @@ extern uint8 `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
  * \returns 0x80 Socket Timeout
  * \returns 0x01 the socket connection is established
  */
-cystatus `$INSTANCE_NAME`_TcpConnected( uint8 sock )
+cystatus `$INSTANCE_NAME`_TcpConnected( uint8_t sock )
 {
-	uint8 status;
+	uint8_t status;
 	
 	if (`$INSTANCE_NAME`_SOCKET_BAD(sock)) return CYRET_BAD_PARAM;
 	
@@ -85,15 +85,12 @@ cystatus `$INSTANCE_NAME`_TcpConnected( uint8 sock )
  *
  *
  */
-uint8 `$INSTANCE_NAME`_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remote_port )
+uint8_t `$INSTANCE_NAME`_TcpOpenClient( uint16_t port, uint32_t remote_ip, uint16_t remote_port )
 {
-	uint8 socket;
-	uint32 timeout;
-	uint8 ir;
-	uint8 rCfg[6];
-	
-	/* open the socket using the TCP mode */
-	socket = `$INSTANCE_NAME`_SocketOpen( port, `$INSTANCE_NAME`_PROTO_TCP );
+    uint32 timeout;
+	uint8 ir,
+        rCfg[6],
+        socket  = `$INSTANCE_NAME`_SocketOpen( port, `$INSTANCE_NAME`_PROTO_TCP ); // open the socket using the TCP mode
 
 	/*
 	 * 2.0 Patch: retun immediately upon the detection of a socket that is not open
@@ -140,6 +137,7 @@ uint8 `$INSTANCE_NAME`_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remo
 	}
 	return socket;
 }
+
 /* ------------------------------------------------------------------------ */
 /**
  * \brief Open a TCP server socket using a specified port
@@ -153,13 +151,10 @@ uint8 `$INSTANCE_NAME`_TcpOpenClient( uint16 port, uint32 remote_ip, uint16 remo
  * connect when a valid SYN packet is received.
  * \sa _SocketOpen
  */
-uint8 `$INSTANCE_NAME`_TcpOpenServer(uint16 port)
+uint8_t `$INSTANCE_NAME`_TcpOpenServer(uint16_t port)
 {
-	uint8 socket;
-	uint8 status;
-	
-	/* open the socket using the TCP mode */
-	socket = `$INSTANCE_NAME`_SocketOpen( port, `$INSTANCE_NAME`_PROTO_TCP );
+	uint8 status,
+        socket = `$INSTANCE_NAME`_SocketOpen( port, `$INSTANCE_NAME`_PROTO_TCP ); // open the socket using the TCP mode
 
 	/*
 	 * 2.0 Patch: retun immediately upon the detection of a socket that is not open
@@ -180,6 +175,7 @@ uint8 `$INSTANCE_NAME`_TcpOpenServer(uint16 port)
 	
 	return socket;
 }
+
 /* ------------------------------------------------------------------------ */
 /**
  * \brief suspend operation while waiting for a connection to be established
@@ -191,9 +187,9 @@ uint8 `$INSTANCE_NAME`_TcpOpenServer(uint16 port)
  * Use _TcpConnected for non-blocking scans.
  * \sa _TcpConnected
  */ 
-cystatus `$INSTANCE_NAME`_TcpWaitForConnection( uint8 socket )
+cystatus `$INSTANCE_NAME`_TcpWaitForConnection( uint8_t socket )
 {
-	uint8 status;
+	uint8_t status;
 
 	/*
 	 * If the socket is invalid or not yet open, return a non-connect result
@@ -213,6 +209,7 @@ cystatus `$INSTANCE_NAME`_TcpWaitForConnection( uint8 socket )
 		
 	return CYRET_SUCCESS;
 }
+
 /* ------------------------------------------------------------------------ */
 /**
  * \brief Generic transmission of a data block using TCP
@@ -225,17 +222,18 @@ cystatus `$INSTANCE_NAME`_TcpWaitForConnection( uint8 socket )
  * the connection must have been previously established in order for the
  * the function to operate properly, otherwise, no data will be transmitted.
  */
-uint16 `$INSTANCE_NAME`_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 flags)
+uint16_t `$INSTANCE_NAME`_TcpSend( uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags)
 {
-	uint16 tx_length;
-	uint16 max_packet;
-	uint8 buf_size;
-	uint16 ptr;
-	uint8 result;
+	uint16_t tx_length,
+	        max_packet,
+        	ptr;
+	uint8_t buf_size,
+            result;
 	
 	if (`$INSTANCE_NAME`_SOCKET_BAD(socket) ) return 0;
 	
 	tx_length = `$INSTANCE_NAME`_TxBufferFree( socket );
+    
 	if ( (tx_length < len ) && ((flags&`$INSTANCE_NAME`_TXRX_FLG_WAIT) != 0) ) {
 		/* 
 		 * there is not enough room in the buffer, but the caller requested
@@ -287,6 +285,7 @@ uint16 `$INSTANCE_NAME`_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 
 	
 	return tx_length;
 }
+
 /* ------------------------------------------------------------------------ */
 /**
  * \brief Send an ASCII String using TCP
@@ -297,21 +296,19 @@ uint16 `$INSTANCE_NAME`_TcpSend( uint8 socket, uint8* buffer, uint16 len, uint8 
  * `$INSTANCE_NAME`_TcpPrint is a wrapper for the TcpSend function to simplify the
  * transmission of strings, and prompts over the open connection using TCP.
  */
-void `$INSTANCE_NAME`_TcpPrint(uint8 socket, const char *string )
+void `$INSTANCE_NAME`_TcpPrint(uint8_t socket, const char* string )
 {
-	uint16 length;
-	
-	length = strlen(string);
+	uint16_t length = strlen(string);
 	`$INSTANCE_NAME`_TcpSend(socket, (uint8*) string,length, 0);
 }
+
 /* ------------------------------------------------------------------------ */
-uint16 `$INSTANCE_NAME`_TcpReceive(uint8 socket, uint8* buffer, uint16 len, uint8 flags)
+uint16_t `$INSTANCE_NAME`_TcpReceive(uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags)
 {
-	uint16 rx_size;
-	uint16 bytes;
-	uint16 ptr;
+	uint16_t rx_size,
+            ptr,
+            bytes = 0;
 	
-	bytes = 0;
 	/*
 	 * when there is a bad socket, just return 0 bys no matter what.
 	 */
@@ -355,25 +352,27 @@ uint16 `$INSTANCE_NAME`_TcpReceive(uint8 socket, uint8* buffer, uint16 len, uint
 	}	
 	return bytes;
 }
+
 /* ------------------------------------------------------------------------ */
-char `$INSTANCE_NAME`_TcpGetChar( uint8 socket )
+char `$INSTANCE_NAME`_TcpGetChar( uint8_t socket )
 {
 	char ch;
-	uint16 len;
+	uint16_t len;
 	
 	do {
 		len = `$INSTANCE_NAME`_TcpReceive(socket, (uint8*)&ch, 1, 0);
 	}
 	while (len < 1);
+    
 	return ch;
 }
+
 /* ------------------------------------------------------------------------ */
-int `$INSTANCE_NAME`_TcpGetLine( uint8 socket, char *buffer )
+int `$INSTANCE_NAME`_TcpGetLine( uint8_t socket, char *buffer )
 {
 	char ch;
-	int idx;
+	int idx = 0;
 	
-	idx = 0;
 	do {
 		ch = `$INSTANCE_NAME`_TcpGetChar( socket );
 		if ((ch != '\r') && (ch!='\n') ) {
@@ -392,6 +391,7 @@ int `$INSTANCE_NAME`_TcpGetLine( uint8 socket, char *buffer )
 	
 	return idx;
 }
+
 /* ======================================================================== */
 /** @} */
 /* [] END OF FILE */

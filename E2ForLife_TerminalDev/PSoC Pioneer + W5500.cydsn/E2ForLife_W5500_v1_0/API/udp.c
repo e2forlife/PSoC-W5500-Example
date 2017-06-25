@@ -38,22 +38,20 @@
  */
 /* ======================================================================== */
 #include <cytypes.h>
-#include <cylib.h>
+#include <CyLib.h>
 #include <string.h>
 
 #include "`$INSTANCE_NAME`.h"
 
-extern uint8 `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
+extern uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 
 /* ------------------------------------------------------------------------ */
-uint8 `$INSTANCE_NAME`_UdpOpen( uint16 port )
+uint8_t `$INSTANCE_NAME`_UdpOpen( uint16_t port )
 {
-	uint8 socket;
-	uint8 status;
-	uint8 tries;
+	uint8_t socket,
+	        status = `$INSTANCE_NAME`_SR_CLOSED,
+	        tries = 0;
 	
-	tries = 0;
-	status = `$INSTANCE_NAME`_SR_CLOSED;
 	do {
 		socket = `$INSTANCE_NAME`_SocketOpen(port, `$INSTANCE_NAME`_PROTO_UDP);
 	
@@ -70,15 +68,14 @@ uint8 `$INSTANCE_NAME`_UdpOpen( uint16 port )
 	
 	return socket;
 }
+
 /* ------------------------------------------------------------------------ */
 /**
  * \brief Send a block of data using UDP.
  */
-uint16 `$INSTANCE_NAME`_UdpSend(uint8 socket, uint32 ip, uint16 port, uint8 *buffer, uint16 len, uint8 flags)
+uint16_t `$INSTANCE_NAME`_UdpSend(uint8_t socket, uint32_t ip, uint16_t port, uint8_t *buffer, uint16_t len, uint8_t flags)
 {
-	uint16 tx_length;	
-
-	tx_length = `$INSTANCE_NAME`_GetTxLength(socket,len,flags);
+	uint16_t tx_length = `$INSTANCE_NAME`_GetTxLength(socket,len,flags);
 	
 	/* fix endian-ness */
 	port = CYSWAP_ENDIAN16(port);
@@ -89,16 +86,15 @@ uint16 `$INSTANCE_NAME`_UdpSend(uint8 socket, uint32 ip, uint16 port, uint8 *buf
 	`$INSTANCE_NAME`_WriteTxData(socket, buffer, tx_length, flags);
 	
 	return tx_length;
-	
 }
+
 /* ------------------------------------------------------------------------ */
-uint16 `$INSTANCE_NAME`_UdpReceive(uint8 socket, uint8 *header, uint8 *buffer, uint16 len, uint8 flags)
+uint16_t `$INSTANCE_NAME`_UdpReceive(uint8_t socket, uint8_t *header, uint8_t *buffer, uint16_t len, uint8_t flags)
 {
-	uint16 rx_size;
-	uint16 bytes;
-	uint16 ptr;
+	uint16 rx_size,
+            bytes = 0,
+            ptr;
 	
-	bytes = 0;
 	/*
 	 * request the length of the data block available for reading, but, add
 	 * the header size (8 bytes) to the length of data requested to account
@@ -150,6 +146,7 @@ uint16 `$INSTANCE_NAME`_UdpReceive(uint8 socket, uint8 *header, uint8 *buffer, u
 	
 	return bytes;
 }
+
 /* ------------------------------------------------------------------------ */
 /** \todo Open Multi-cast socket */
 /* ------------------------------------------------------------------------ */

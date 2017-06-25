@@ -37,7 +37,7 @@
  */
 /* ======================================================================== */
 #include <cytypes.h>
-#include <cylib.h>
+#include <CyLib.h>
 
 #include "`$INSTANCE_NAME`.h"
 
@@ -67,20 +67,16 @@
  * sucessful completion a register image of the IP address is returned,
  * otherwise, 0xFFFFFFFF is returned.
  */
-uint32 `$INSTANCE_NAME`_ParseIP( const char* ipString )
+uint32_t `$INSTANCE_NAME`_ParseIP( const char* ipString )
 {
 	/*
 	 * Parse a human readable string in to a IP address usable by the hardare
 	 */
-	int index;
 	char digit[5];
-	uint8 ip[4];
-	int counter;
-	int dindex;
-	
-	index = 0;
-	dindex = 0;
-	counter = 0;
+	uint8_t ip[4];
+    int index = 0,
+        counter = 0,
+        dindex = 0;
 	
 	while ( (counter < 4) && ((unsigned int)index < strlen(ipString) ) ) {
 		if ( (ipString[index] >= '0' ) && (ipString[index] <= '9') ) {
@@ -120,7 +116,7 @@ uint32 `$INSTANCE_NAME`_ParseIP( const char* ipString )
  * /param *macString Pointer to the ASCII-Z String containing the MAC address
  * /param *mac Pointer to the 6-byte array to hold the output mac addres
  */
-cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8 *mac)
+cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8_t *mac)
 {
 	/* 
 	 * a mac address is specified as a string of 6 hex bytes with
@@ -129,11 +125,9 @@ cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8 *mac)
 	 * otherwise, SUCESS is returned.
 	 */
 	int digit;
-	uint16 index;
-	cystatus result;
-	
-	result = CYRET_SUCCESS;
-	index = 0;
+	uint16 index = 0;
+	cystatus result = CYRET_SUCCESS;
+
 	for(digit = 0;(digit<6) && (result == CYRET_SUCCESS)&&(macString[index] != 0);++digit) {
 		// process the first nibble
 		if (isxdigit((int)macString[index]) ) {
@@ -175,17 +169,16 @@ cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8 *mac)
  * of the harware address.  This is a nice fucntion for displaying a MAC
  * address, but otherwise not really required for functionality
  */
-void `$INSTANCE_NAME`_StringMAC(uint8 *mac, char *macString)
+void `$INSTANCE_NAME`_StringMAC(uint8_t *mac, char *macString)
 {
-	int digit;
-	int index;
+	int digit,
+	    index = 0;
 	
 	/*
 	 * first read the MAC address from the chip
 	 * and inintialize some locals so that the
 	 * string formater will function properly
 	 */
-	index = 0;
 	for(digit=0;digit<6;++digit) {
 		// convert the first nibble
 		macString[index++] = _BIN2HEX(((mac[digit]>>4)&0x0F));
@@ -209,15 +202,16 @@ void `$INSTANCE_NAME`_StringMAC(uint8 *mac, char *macString)
  * log file. This is basically just a useful helper function to prevent having
  * to slog through the hex to determine the IP address ehn debugging.
  */
-void `$INSTANCE_NAME`_StringIP( uint32 ip, char *ipString )
+void `$INSTANCE_NAME`_StringIP( uint32_t ip, char *ipString )
 {
-	uint8 *ipBytes;
-	int index;
-	int digit;
-	int work, temp;
+	uint8 *ipBytes = (uint8*) &ip;
+	int index = 0,
+	    digit,
+	    work,
+        temp;
 	
-	ipBytes = (uint8*)&ip;
-	index = 0;
+	//ipBytes = (uint8*)&ip;
+	//index = 0;
 	for(digit=0;digit<4;++digit) {
 		work = ipBytes[digit];
 		if (work >= 100) {
@@ -254,31 +248,32 @@ void `$INSTANCE_NAME`_StringIP( uint32 ip, char *ipString )
  */
 int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* result, int resultSize)
 {
-   const char base64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-   const uint8 *dat = (const uint8 *)data_buf;
-   int resultIndex = 0;
-   int x;
-   uint32 n = 0;
-   int padCount = dataLength % 3;
-   uint8 n0, n1, n2, n3;
+    const char base64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const uint8 *dat = (const uint8 *)data_buf;
+    int resultIndex = 0,
+        x,
+        padCount = dataLength % 3;
+    uint32_t n = 0;
+    uint8_t n0, n1, n2, n3;
  
-   /* increment over the length of the string, three characters at a time */
-   for (x = 0; x < dataLength; x += 3) 
-   {
-      /* these three 8-bit (ASCII) characters become one 24-bit number */
-      n = dat[x] << 16;
- 
-      if((x+1) < dataLength)
-         n += dat[x+1] << 8;
- 
-      if((x+2) < dataLength)
-         n += dat[x+2];
- 
-      /* this 24-bit number gets separated into four 6-bit numbers */
-      n0 = (uint8)(n >> 18) & 63;
-      n1 = (uint8)(n >> 12) & 63;
-      n2 = (uint8)(n >> 6) & 63;
-      n3 = (uint8)n & 63;
+    /* increment over the length of the string, three characters at a time */
+    for (x = 0; x < dataLength; x += 3) {
+        /* these three 8-bit (ASCII) characters become one 24-bit number */
+        n = dat[x] << 16;
+  
+        if((x+1) < dataLength) {
+            n += dat[x+1] << 8;
+        }
+  
+        if((x+2) < dataLength) {
+            n += dat[x+2];
+        }
+  
+        /* this 24-bit number gets separated into four 6-bit numbers */
+        n0 = (uint8)(n >> 18) & 63;
+        n1 = (uint8)(n >> 12) & 63;
+        n2 = (uint8)(n >> 6) & 63;
+        n3 = (uint8)n & 63;
  
       /*
        * if we have one byte available, then its encoding is spread
@@ -326,6 +321,7 @@ int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* re
    result[resultIndex] = 0;
    return 1;   /* indicate success */
 }
+
 /* ------------------------------------------------------------------------ */
 /**
  * \brief decode a base64 encoded string in to corrisponding binary data
@@ -345,11 +341,12 @@ int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* re
  * value of 1024 for the maximum woudl have 35 after calling when 35 bytes were
  * decoded from the input string.
  */
-int `$INSTANCE_NAME`_Base64Decode (char *in, int inLen, uint8 *out, int *outLen)
+int `$INSTANCE_NAME`_Base64Decode (char *in, int inLen, uint8_t *out, int *outLen)
 { 
     char *end = in + inLen;
-    int buf = 1, len = 0;
- 	uint8 c;
+    int buf = 1,
+        len = 0;
+ 	uint8_t c;
 	
     while (in < end) {
 		if ( (*in >= 'A') && (*in <= 'Z') )       { c = (*in) - 'A';	      }
@@ -395,17 +392,22 @@ int `$INSTANCE_NAME`_Base64Decode (char *in, int inLen, uint8 *out, int *outLen)
     *outLen = len; /* modify to reflect the actual output size */
     return 0;
 }
+
 /* ------------------------------------------------------------------------ */
-uint32 `$INSTANCE_NAME`_IPADDRESS(uint8 x1, uint8 x2, uint8 x3, uint8 x4 )
+uint32_t `$INSTANCE_NAME`_IPADDRESS(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4 )
 {
-	uint32 adr;
-	uint8* ptr;
+	uint32_t adr;
+	uint8_t* ptr = (uint8*)&adr;
 	
-	ptr = (uint8*)&adr;
-	ptr[0] = x1; ptr[1] = x2;
-	ptr[2] = x3; ptr[3] = x4;
+	//ptr = (uint8*)&adr;
+	ptr[0] = x1;
+    ptr[1] = x2;
+	ptr[2] = x3;
+    ptr[3] = x4;
+    
 	return adr;
 }
+
 /* ------------------------------------------------------------------------ */
 /**
  * undefine the helper macros used to convert to/from ASCII-HEX from/to
