@@ -1,4 +1,3 @@
-/* ------------------------------------------------------------------------ */
 /**
  * \addtogroup e2forlife_w5500
  * @{
@@ -54,7 +53,7 @@
 #define _DECODE64_WHITESPACE 64
 #define _DECODE64_EQUALS     65
 #define _DECODE64_INVALID    66
-/* ------------------------------------------------------------------------ */
+
 /**
  * \brief Convert an ASCII string to an IP address.
  * \param ipString (char*) buffer containing the IP address to convert.
@@ -69,9 +68,7 @@
  */
 uint32_t `$INSTANCE_NAME`_ParseIP( const char* ipString )
 {
-	/*
-	 * Parse a human readable string in to a IP address usable by the hardare
-	 */
+	// Parse a human readable string in to a IP address usable by the hardare
 	char digit[5];
 	uint8_t ip[4];
     int index = 0,
@@ -88,16 +85,17 @@ uint32_t `$INSTANCE_NAME`_ParseIP( const char* ipString )
 		if ( (ipString[index] == '.') || (ipString[index+1] == 0) ) {
 			digit[dindex] = 0;
 			dindex = 0;
-			/* convert the value and store in the buffer */
+			// convert the value and store in the buffer
 			ip[counter] = 0;
+            
 			while (digit[dindex] != 0) {
 				ip[counter] = (ip[counter]*10) + (digit[dindex]-'0');
 				++dindex;
 				// ip[counter] = ...
 			}
-			/* reset the digit index to start accumulating digits again*/
+			// reset the digit index to start accumulating digits again
 			dindex = 0;
-			/* move to the next address byte */
+			// move to the next address byte
 			++counter;
 		}
 		++index;
@@ -105,12 +103,11 @@ uint32_t `$INSTANCE_NAME`_ParseIP( const char* ipString )
 	
 	if (counter != 4) {
 		return( 0xFFFFFFFF );
-	}
-	else {
+	} else {
 		return( `$INSTANCE_NAME`_IPADDRESS(ip[0], ip[1], ip[2], ip[3]) );
 	}
 }
-/* ------------------------------------------------------------------------ */
+
 /**
  * /brief Parse a MAC Address string in to a 6-byte mac address
  * /param *macString Pointer to the ASCII-Z String containing the MAC address
@@ -137,28 +134,25 @@ cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8_t *mac)
 			if (isxdigit((int)macString[index])) {
 				mac[digit] += _HEX2BIN(macString[index]);
 				++index;
-				/*
-				 * now for digits other than digit 5 (the last one) look for
-				 * the dash seperator.  If there is no dash, return bad data
-				 */
+				// now for digits other than digit 5 (the last one) look for
+				// the dash seperator.  If there is no dash, return bad data
 				if (digit<5) {
 					if (macString[index]!=':') {
 						result = CYRET_BAD_DATA;
 					}
 					++index; // move conversion pointer to the next value
 				}
-			}
-			else {
+			} else {
 				result = CYRET_BAD_DATA;
 			}
-		}
-		else {
+		} else {
 			result = CYRET_BAD_DATA;
 		}
 	}
+    
 	return( result );
 }
-/* ------------------------------------------------------------------------ */
+
 /**
  * \brief Convert a device MAC address (HArdware Address) to ASCII
  * \param mac (*uint8) array of bytes holding the MAC address
@@ -174,11 +168,9 @@ void `$INSTANCE_NAME`_StringMAC(uint8_t *mac, char *macString)
 	int digit,
 	    index = 0;
 	
-	/*
-	 * first read the MAC address from the chip
-	 * and inintialize some locals so that the
-	 * string formater will function properly
-	 */
+	// first read the MAC address from the chip
+	// and inintialize some locals so that the
+	// string formater will function properly
 	for(digit=0;digit<6;++digit) {
 		// convert the first nibble
 		macString[index++] = _BIN2HEX(((mac[digit]>>4)&0x0F));
@@ -191,7 +183,7 @@ void `$INSTANCE_NAME`_StringMAC(uint8_t *mac, char *macString)
 		}
 	}
 }
-/* ------------------------------------------------------------------------ */
+
 /**
  * \brief convert an IP address to a ASCII String for printing
  * \param ip (uinit32) Binary form IP Address
@@ -227,14 +219,12 @@ void `$INSTANCE_NAME`_StringIP( uint32_t ip, char *ipString )
 		ipString[index++] = '0'+work;
 		if (digit <3) {
 			ipString[index++] = '.';
-		}
-		else {
+		} else {
 			ipString[index] = 0;
 		}
 	}
 }
-/* ------------------------------------------------------------------------ */
-/* ------------------------------------------------------------------------ */
+
 /**
  * \brief Encode input data buffer as ASCII Base64 values
  * \param *data_buf input data buffer
@@ -256,9 +246,9 @@ int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* re
     uint32_t n = 0;
     uint8_t n0, n1, n2, n3;
  
-    /* increment over the length of the string, three characters at a time */
+    // increment over the length of the string, three characters at a time
     for (x = 0; x < dataLength; x += 3) {
-        /* these three 8-bit (ASCII) characters become one 24-bit number */
+        // these three 8-bit (ASCII) characters become one 24-bit number
         n = dat[x] << 16;
   
         if((x+1) < dataLength) {
@@ -269,60 +259,45 @@ int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* re
             n += dat[x+2];
         }
   
-        /* this 24-bit number gets separated into four 6-bit numbers */
+        // this 24-bit number gets separated into four 6-bit numbers
         n0 = (uint8)(n >> 18) & 63;
         n1 = (uint8)(n >> 12) & 63;
         n2 = (uint8)(n >> 6) & 63;
         n3 = (uint8)n & 63;
  
-      /*
-       * if we have one byte available, then its encoding is spread
-       * out over two characters
-       */
-      if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
-      result[resultIndex++] = base64chars[n0];
-      if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
-      result[resultIndex++] = base64chars[n1];
+        // if we have one byte available, then its encoding is spread out over two characters
+        if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
+        result[resultIndex++] = base64chars[n0];
+        if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
+        result[resultIndex++] = base64chars[n1];
  
-      /*
-       * if we have only two bytes available, then their encoding is
-       * spread out over three chars
-       */
-      if((x+1) < dataLength)
-      {
-         if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
-         result[resultIndex++] = base64chars[n2];
-      }
+        // if we have only two bytes available, then their encoding is spread out over three chars
+        if((x+1) < dataLength) {
+            if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
+            result[resultIndex++] = base64chars[n2];
+        }
  
-      /*
-       * if we have all three bytes available, then their encoding is spread
-       * out over four characters
-       */
-      if((x+2) < dataLength)
-      {
-         if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
-         result[resultIndex++] = base64chars[n3];
-      }
-   }  
+        // if we have all three bytes available, then their encoding is spread out over four characters
+        if((x+2) < dataLength) {
+            if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
+            result[resultIndex++] = base64chars[n3];
+        }
+    }
  
-   /*
-    * create and add padding that is required if we did not have a multiple of 3
-    * number of characters available
-    */
-   if (padCount > 0) 
-   { 
-      for (; padCount < 3; padCount++) 
-      { 
-         if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
-         result[resultIndex++] = '=';
-      } 
-   }
-   if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
-   result[resultIndex] = 0;
-   return 1;   /* indicate success */
+    // create and add padding that is required if we did not have a multiple of 3 number of characters available
+    if (padCount > 0) 
+    {
+      for (; padCount < 3; padCount++) {
+            if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
+            result[resultIndex++] = '=';
+        } 
+    }
+    if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
+    result[resultIndex] = 0;
+
+    return 1;   // indicate success
 }
 
-/* ------------------------------------------------------------------------ */
 /**
  * \brief decode a base64 encoded string in to corrisponding binary data
  * \param *in pointer to the input buffer of base64 encoded data
@@ -383,17 +358,16 @@ int `$INSTANCE_NAME`_Base64Decode (char *in, int inLen, uint8_t *out, int *outLe
         if ((len += 2) > *outLen) return 1; /* buffer overflow */
         *out++ = buf >> 10;
         *out++ = buf >> 2;
-    }
-    else if (buf & 0x1000) {
+    } else if (buf & 0x1000) {
         if (++len > *outLen) return 1; /* buffer overflow */
         *out++ = buf >> 4;
     }
  
     *outLen = len; /* modify to reflect the actual output size */
+    
     return 0;
 }
 
-/* ------------------------------------------------------------------------ */
 uint32_t `$INSTANCE_NAME`_IPADDRESS(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4 )
 {
 	uint32_t adr;
@@ -408,7 +382,6 @@ uint32_t `$INSTANCE_NAME`_IPADDRESS(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t 
 	return adr;
 }
 
-/* ------------------------------------------------------------------------ */
 /**
  * undefine the helper macros used to convert to/from ASCII-HEX from/to
  * binary.  This is done to prevent stepping on someone else's toes who
@@ -420,6 +393,5 @@ uint32_t `$INSTANCE_NAME`_IPADDRESS(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t 
 #undef _DECODE64_EQUALS
 #undef _DECODE64_INVALID
 
-/* ------------------------------------------------------------------------ */
 /** @} */
 /* [] END OF FILE */

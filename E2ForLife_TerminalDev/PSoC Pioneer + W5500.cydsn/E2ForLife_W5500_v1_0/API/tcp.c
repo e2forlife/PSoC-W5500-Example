@@ -45,7 +45,6 @@
 
 extern uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 
-/* ------------------------------------------------------------------------ */
 /**
  * \brief Read the status of the socket and check to see if a connection is established
  * \param sock (uint8) the socket number to which status shoudl be checked
@@ -61,10 +60,10 @@ cystatus `$INSTANCE_NAME`_TcpConnected( uint8_t sock )
 	if (`$INSTANCE_NAME`_SOCKET_BAD(sock)) return CYRET_BAD_PARAM;
 	
 	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_SR,`$INSTANCE_NAME`_SOCKET_BASE(sock),0,&status, 1);
+    
 	if (status == `$INSTANCE_NAME`_SR_ESTABLISHED) {
 		return CYRET_SUCCESS;
-	}
-	else {
+	} else {
 		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_IR, `$INSTANCE_NAME`_SOCKET_BASE(sock),0,&status, 1);
 		if ( (status & `$INSTANCE_NAME`_IR_TIMEOUT) != 0) {
 			status = 0xFF;
@@ -74,7 +73,7 @@ cystatus `$INSTANCE_NAME`_TcpConnected( uint8_t sock )
 	}
 	return CYRET_STARTED;
 }
-/* ------------------------------------------------------------------------ */
+
 /**
  * \brief Open a socket and set protocol to TCP mode
  * \param port (uint16) the port number on which to open the socket
@@ -87,35 +86,28 @@ cystatus `$INSTANCE_NAME`_TcpConnected( uint8_t sock )
  */
 uint8_t `$INSTANCE_NAME`_TcpOpenClient( uint16_t port, uint32_t remote_ip, uint16_t remote_port )
 {
-    uint32 timeout;
-	uint8 ir,
-        rCfg[6],
-        socket  = `$INSTANCE_NAME`_SocketOpen( port, `$INSTANCE_NAME`_PROTO_TCP ); // open the socket using the TCP mode
+    uint32_t timeout;
+	uint8_t ir,
+            rCfg[6],
+            socket  = `$INSTANCE_NAME`_SocketOpen( port, `$INSTANCE_NAME`_PROTO_TCP ); // open the socket using the TCP mode
 
-	/*
-	 * 2.0 Patch: retun immediately upon the detection of a socket that is not open
-	 */
+	// 2.0 Patch: retun immediately upon the detection of a socket that is not open
 	if (`$INSTANCE_NAME`_SOCKET_BAD(socket) ) return 0xFF;
+    
 	if ( (remote_ip != 0xFFFFFFFF) && (remote_ip != 0) ) {
-		/*
-		 * a valid socket was opened, so now we can use the socket handle to
-		 * open the client connection to the specified server IP.
-		 * So, this builds a configuration packet to send to the device
-		 * to reduce the operations executed at one time (lower overhead)
-		 */
+		// a valid socket was opened, so now we can use the socket handle to
+		// open the client connection to the specified server IP.
+		// So, this builds a configuration packet to send to the device
+		// to reduce the operations executed at one time (lower overhead)
 		remote_port = CYSWAP_ENDIAN16(remote_port);
 		memcpy((void*)&rCfg[0], (void*)&remote_ip, 4);
 		memcpy((void*)&rCfg[4],(void*)&remote_port,2);
 		
-		/*
-		 * Blast out the configuration record all at once to set up the IP and
-		 * port for the remote connection.
-		 */
+		// Blast out the configuration record all at once to set up the IP and
+		// port for the remote connection.
 		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_DIPR, `$INSTANCE_NAME`_SOCKET_BASE(socket),1,&rCfg[0], 6);
 
-		/*
-		 * Execute the connection to the remote server and check for errors
-		 */
+		// Execute the connection to the remote server and check for errors
 		if (`$INSTANCE_NAME`_ExecuteSocketCommand(socket, `$INSTANCE_NAME`_CR_CONNECT) == CYRET_SUCCESS) {
 			timeout = 0;
 			/* wait for the socket connection to the remote host is established */
@@ -127,18 +119,16 @@ uint8_t `$INSTANCE_NAME`_TcpOpenClient( uint16_t port, uint32_t remote_ip, uint1
 					/* internal chip timeout occured */
 					timeout = 3000;
 				}				
-			}
-			while ( ((ir&0x01) == 0)  && (timeout < 3000) );
-		}
-		else {
+			} while ( ((ir&0x01) == 0)  && (timeout < 3000) );
+		} else {
 			`$INSTANCE_NAME`_SocketClose(socket,0);
 			socket = 0xFF;
 		}
 	}
+    
 	return socket;
 }
 
-/* ------------------------------------------------------------------------ */
 /**
  * \brief Open a TCP server socket using a specified port
  * \param port The port number to assign to the socket
@@ -153,30 +143,23 @@ uint8_t `$INSTANCE_NAME`_TcpOpenClient( uint16_t port, uint32_t remote_ip, uint1
  */
 uint8_t `$INSTANCE_NAME`_TcpOpenServer(uint16_t port)
 {
-	uint8 status,
-        socket = `$INSTANCE_NAME`_SocketOpen( port, `$INSTANCE_NAME`_PROTO_TCP ); // open the socket using the TCP mode
+	uint8_t status,
+            socket = `$INSTANCE_NAME`_SocketOpen( port, `$INSTANCE_NAME`_PROTO_TCP ); // open the socket using the TCP mode
 
-	/*
-	 * 2.0 Patch: retun immediately upon the detection of a socket that is not open
-	 */
+	// 2.0 Patch: retun immediately upon the detection of a socket that is not open
 	if ( `$INSTANCE_NAME`_SOCKET_BAD(socket)) return 0xFF;
 	
 	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_SR,`$INSTANCE_NAME`_SOCKET_BASE(socket),0,&status,1);
-	if (status != `$INSTANCE_NAME`_SR_INIT) {
-		/*
-		 * Error opening socket
-		 */
-		`$INSTANCE_NAME`_SocketClose(socket,0);
-	}
-	else if (`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_LISTEN) != CYRET_SUCCESS) {
-		`$INSTANCE_NAME`_SocketClose( socket, 0);
+	if ( status != `$INSTANCE_NAME`_SR_INIT ) {
+		`$INSTANCE_NAME`_SocketClose( socket,0 ); // Error opening socket
+	} else if (`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_LISTEN ) != CYRET_SUCCESS ) {
+		`$INSTANCE_NAME`_SocketClose( socket, 0 );
 		socket = 0xFF;
 	}
 	
 	return socket;
 }
 
-/* ------------------------------------------------------------------------ */
 /**
  * \brief suspend operation while waiting for a connection to be established
  * \param socket (uint8) Socket handle for an open socket.
@@ -191,26 +174,20 @@ cystatus `$INSTANCE_NAME`_TcpWaitForConnection( uint8_t socket )
 {
 	uint8_t status;
 
-	/*
-	 * If the socket is invalid or not yet open, return a non-connect result
-	 * to prevent calling functions and waiting for the timeout for sockets
-	 * that are not yet open
-	 */
+	// If the socket is invalid or not yet open, return a non-connect result
+	// to prevent calling functions and waiting for the timeout for sockets
+	// that are not yet open
 	if (`$INSTANCE_NAME`_SOCKET_BAD(socket)) return CYRET_BAD_PARAM;
-	/*
-	 * Wait for the connectino to be established, or a timeout on the connection
-	 * delay to occur.
-	 */
+    
+	// Wait for the connection to be established, or a timeout on the connection delay to occur.
 	do {
 		CyDelay(10);
 		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_SR,`$INSTANCE_NAME`_SOCKET_BASE(socket),0,&status, 1);
-	}
-	while ( status == `$INSTANCE_NAME`_SR_LISTEN );
+	} while ( status == `$INSTANCE_NAME`_SR_LISTEN );
 		
 	return CYRET_SUCCESS;
 }
 
-/* ------------------------------------------------------------------------ */
 /**
  * \brief Generic transmission of a data block using TCP
  * \param socket the socket that will be used to send the data
@@ -235,34 +212,29 @@ uint16_t `$INSTANCE_NAME`_TcpSend( uint8_t socket, uint8_t* buffer, uint16_t len
 	tx_length = `$INSTANCE_NAME`_TxBufferFree( socket );
     
 	if ( (tx_length < len ) && ((flags&`$INSTANCE_NAME`_TXRX_FLG_WAIT) != 0) ) {
-		/* 
-		 * there is not enough room in the buffer, but the caller requested
-		 * this to block until there was free space. So, check the memory
-		 * size to determine if the tx buffer is big enough to handle the
-		 * data block without fragmentation.
-		 */
+        
+		// there is not enough room in the buffer, but the caller requested
+		// this to block until there was free space. So, check the memory
+		// size to determine if the tx buffer is big enough to handle the
+		// data block without fragmentation.
 		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_TXBUF_SIZE, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,&buf_size,1);
 		max_packet = (buf_size == 0)? 0 : (0x400 << (buf_size-1));
-		/*
-		 * now that we know the max buffer size, if it is smaller than the
-		 * requested transmit lenght, we have an error, so return 0
-		 */
+        
+		// now that we know the max buffer size, if it is smaller than the
+		// requested transmit lenght, we have an error, so return 0
 		if (max_packet < len ) return 0;
-		/* otherwise, we will wait for the room in the buffer */
+		// otherwise, we will wait for the room in the buffer
 		do {
 			tx_length = `$INSTANCE_NAME`_TxBufferFree( socket );
-		}
-		while ( tx_length < len );
-	}
-	else {
+		} while ( tx_length < len );
+	} else {
 		tx_length = len;
 	}
-	/*
-	 * The length of the Tx data block has now been determined, and can be
-	 * copied in to the W5500 buffer memory. First read the pointer, then
-	 * write data from the pointer forward, lastly update the pointer and issue
-	 * the SEND command.
-	 */
+    
+	// The length of the Tx data block has now been determined, and can be
+	// copied in to the W5500 buffer memory. First read the pointer, then
+	// write data from the pointer forward, lastly update the pointer and issue
+	// the SEND command.
 	`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&ptr,2);
 	ptr = CYSWAP_ENDIAN16( ptr );
 	`$INSTANCE_NAME`_Send( ptr, `$INSTANCE_NAME`_TX_BASE(socket),1,buffer,tx_length);
@@ -273,20 +245,16 @@ uint16_t `$INSTANCE_NAME`_TcpSend( uint8_t socket, uint8_t* buffer, uint16_t len
 	`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_SEND );
 	
 	if ( (flags & `$INSTANCE_NAME`_TXRX_FLG_WAIT) != 0) {
-		/*
-		 * block until send is complete
-		 */
+		// block until send is complete
 		do {
 			CyDelay(1);
 			result = `$INSTANCE_NAME`_SocketSendComplete(socket);
-		}
-		while( (result != CYRET_FINISHED) && (result != CYRET_CANCELED) );
+		} while ( (result != CYRET_FINISHED) && (result != CYRET_CANCELED) );
 	}
 	
 	return tx_length;
 }
 
-/* ------------------------------------------------------------------------ */
 /**
  * \brief Send an ASCII String using TCP
  * \param socket the socket to use for sending the data
@@ -302,58 +270,47 @@ void `$INSTANCE_NAME`_TcpPrint(uint8_t socket, const char* string )
 	`$INSTANCE_NAME`_TcpSend(socket, (uint8*) string,length, 0);
 }
 
-/* ------------------------------------------------------------------------ */
+
 uint16_t `$INSTANCE_NAME`_TcpReceive(uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags)
 {
 	uint16_t rx_size,
             ptr,
             bytes = 0;
 	
-	/*
-	 * when there is a bad socket, just return 0 bys no matter what.
-	 */
+	// when there is a bad socket, just return 0 bys no matter what.
 	if ( `$INSTANCE_NAME`_SOCKET_BAD(socket) ) return 0;
-	/*
-	 * Otherwise, read the number of bytes waiting to be read.  When the byte
-	 * count is less than the requested bytes, wait for them to be available
-	 * when the wait flag is set, otherwise, just read the waiting data once.
-	 */
+
+	// Otherwise, read the number of bytes waiting to be read.  When the byte
+	// count is less than the requested bytes, wait for them to be available
+	// when the wait flag is set, otherwise, just read the waiting data once.
 	do {
 		rx_size = `$INSTANCE_NAME`_RxDataReady( socket );
-	}
-	while ( (rx_size < len) && (flags&`$INSTANCE_NAME`_TXRX_FLG_WAIT) );
+	} while ( (rx_size < len) && (flags&`$INSTANCE_NAME`_TXRX_FLG_WAIT) );
 	
-	/*
-	 * When data is available, begin processing the data
-	 */
-	if (rx_size > 0) {
-		/* 
-		 * calculate the number of bytes to receive using the available data
-		 * and the requested length of data.
-		 */
+	// When data is available, begin processing the data
+	if (rx_size > 0) { 
+		// calculate the number of bytes to receive using the available data
+		// and the requested length of data.
 		bytes = (rx_size > len) ? len : rx_size;
-		/* Read the starting memory pointer address, and endian correct */
+		// Read the starting memory pointer address, and endian correct
 		`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_RX_RD, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&ptr,2);
 		ptr = CYSWAP_ENDIAN16( ptr );
-		/* Retrieve the data bytes from the W5500 buffer */
+		// Retrieve the data bytes from the W5500 buffer
 		`$INSTANCE_NAME`_Send( ptr, `$INSTANCE_NAME`_RX_BASE(socket),0,buffer,bytes);
-		/* 
-		 * Calculate the new buffer pointer location, endian correct, and
-		 * update the pointer register within the W5500 socket registers
-		 */
+ 
+		// Calculate the new buffer pointer location, endian correct, and
+		// update the pointer register within the W5500 socket registers
 		ptr += bytes;
 		ptr = CYSWAP_ENDIAN16( ptr );
 		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_RX_RD, `$INSTANCE_NAME`_SOCKET_BASE(socket),1,(uint8*)&ptr,2);
-		/*
-		 * when all of the available data was read from the message, execute
-		 * the receive command
-		 */
+		// when all of the available data was read from the message, execute the receive command
 		`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_RECV );
-	}	
+	}
+    
 	return bytes;
 }
 
-/* ------------------------------------------------------------------------ */
+
 char `$INSTANCE_NAME`_TcpGetChar( uint8_t socket )
 {
 	char ch;
@@ -361,13 +318,12 @@ char `$INSTANCE_NAME`_TcpGetChar( uint8_t socket )
 	
 	do {
 		len = `$INSTANCE_NAME`_TcpReceive(socket, (uint8*)&ch, 1, 0);
-	}
-	while (len < 1);
+	} while (len < 1);
     
 	return ch;
 }
 
-/* ------------------------------------------------------------------------ */
+
 int `$INSTANCE_NAME`_TcpGetLine( uint8_t socket, char *buffer )
 {
 	char ch;
@@ -379,19 +335,17 @@ int `$INSTANCE_NAME`_TcpGetLine( uint8_t socket, char *buffer )
 			if ( (ch == '\b')||(ch==127) ) {
 				buffer[idx] = 0;
 				idx = (idx == 0)?0:idx-1;
-			}
-			else {
+			} else {
 				buffer[idx++] = ch;
 				buffer[idx] = 0;
 			}
 		}
-	}
-	while ( (ch!='\r')&&(ch!='\n'));
+	} while ( (ch!='\r')&&(ch!='\n'));
+    
 	buffer[idx] = 0;
 	
 	return idx;
 }
 
-/* ======================================================================== */
 /** @} */
 /* [] END OF FILE */

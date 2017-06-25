@@ -45,7 +45,6 @@
 
 extern uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 
-/* ------------------------------------------------------------------------ */
 uint8_t `$INSTANCE_NAME`_UdpOpen( uint16_t port )
 {
 	uint8_t socket,
@@ -63,13 +62,11 @@ uint8_t `$INSTANCE_NAME`_UdpOpen( uint16_t port )
 			}
 		}
 		++tries;
-	}
-	while ( (tries < 5) && (status != `$INSTANCE_NAME`_SR_UDP) );
+	} while ( (tries < 5) && (status != `$INSTANCE_NAME`_SR_UDP) );
 	
 	return socket;
 }
 
-/* ------------------------------------------------------------------------ */
 /**
  * \brief Send a block of data using UDP.
  */
@@ -77,69 +74,55 @@ uint16_t `$INSTANCE_NAME`_UdpSend(uint8_t socket, uint32_t ip, uint16_t port, ui
 {
 	uint16_t tx_length = `$INSTANCE_NAME`_GetTxLength(socket,len,flags);
 	
-	/* fix endian-ness */
-	port = CYSWAP_ENDIAN16(port);
-	/* setup destination information */
+	port = CYSWAP_ENDIAN16(port); // fix endian-ness
+    
+	// setup destination information
 	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_DIPR,`$INSTANCE_NAME`_SOCKET_BASE(socket),1,(uint8*)&ip,4);
 	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_DPORT, `$INSTANCE_NAME`_SOCKET_BASE(socket),1,(uint8*)&port,2);
-
 	`$INSTANCE_NAME`_WriteTxData(socket, buffer, tx_length, flags);
 	
 	return tx_length;
 }
 
-/* ------------------------------------------------------------------------ */
+
 uint16_t `$INSTANCE_NAME`_UdpReceive(uint8_t socket, uint8_t *header, uint8_t *buffer, uint16_t len, uint8_t flags)
 {
-	uint16 rx_size,
+	uint16_t rx_size,
             bytes = 0,
             ptr;
 	
-	/*
-	 * request the length of the data block available for reading, but, add
-	 * the header size (8 bytes) to the length of data requested to account
-	 * for the header sitting in the Rx Buffers.
-	 */
+	// request the length of the data block available for reading, but, add
+	// the header size (8 bytes) to the length of data requested to account
+	// for the header sitting in the Rx Buffers.
 	do {
 		rx_size = `$INSTANCE_NAME`_RxDataReady( socket );
-	}
-	while ( (rx_size < 8) && (flags&`$INSTANCE_NAME`_TXRX_FLG_WAIT) );
+	} while ( (rx_size < 8) && (flags&`$INSTANCE_NAME`_TXRX_FLG_WAIT) );
 	
-	/*
-	 * if there is data to read from the buffer...
-	 */
-	if (rx_size > 7) {
-		/* 
-		 * calculate the number of bytes to receive using the available data
-		 * and the requested length of data.
-		 */
+	// if there is data to read from the buffer...
+	if (rx_size > 7) { 
+		// calculate the number of bytes to receive using the available data
+		// and the requested length of data.
 		bytes = (rx_size > len) ? len : rx_size;
-		/* Read the starting memory pointer address, and endian correct */
+		// Read the starting memory pointer address, and endian correct
 		`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_RX_RD, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&ptr,2);
 		ptr = CYSWAP_ENDIAN16( ptr );
-		/* Read the UDP header block from the memory */
+		// Read the UDP header block from the memory
 		`$INSTANCE_NAME`_Send( ptr,`$INSTANCE_NAME`_RX_BASE(socket),0,header,8);
 		ptr += 8;
-		/* read the number of bytes to read from the UDP header */
+		// read the number of bytes to read from the UDP header
 		bytes = header[6];
 		bytes = (bytes<<8) + header[7];
 		
-		/*
-		 * Retrieve the length of data from the received UDP packet, starting
-		 * right after the end of the packet header.
-		 */
+		// Retrieve the length of data from the received UDP packet, starting
+		// right after the end of the packet header.
 		`$INSTANCE_NAME`_Send( ptr, `$INSTANCE_NAME`_RX_BASE(socket),0,buffer,bytes);
-		/* 
-		 * Calculate the new buffer pointer location, endian correct, and
-		 * update the pointer register within the W5500 socket registers
-		 */
+		// Calculate the new buffer pointer location, endian correct, and
+		// update the pointer register within the W5500 socket registers
 		ptr += bytes;
 		ptr = CYSWAP_ENDIAN16( ptr );
 		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_RX_RD, `$INSTANCE_NAME`_SOCKET_BASE(socket),1,(uint8*)&ptr,2);
-		/*
-		 * when all of the available data was read from the message, execute
-		 * the receive command
-		 */
+		// when all of the available data was read from the message, execute
+		// the receive command
 		`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_RECV );
 		
 	}
@@ -147,10 +130,12 @@ uint16_t `$INSTANCE_NAME`_UdpReceive(uint8_t socket, uint8_t *header, uint8_t *b
 	return bytes;
 }
 
-/* ------------------------------------------------------------------------ */
-/** \todo Open Multi-cast socket */
-/* ------------------------------------------------------------------------ */
-/** \todo Send Multi-cast data */
-/* ======================================================================== */
+/**
+ * \todo Open Multi-cast socket
+ */
+
+/**
+ * \todo Send Multi-cast data
+ */
 /** @} */
 /* [] END OF FILE */

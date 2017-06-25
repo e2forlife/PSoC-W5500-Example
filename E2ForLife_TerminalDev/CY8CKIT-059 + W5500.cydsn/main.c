@@ -1,5 +1,18 @@
 #include "project.h"
 
+// Para habilitar el soporte a C11 en compiladores "antiguos"
+// agregar -std=c11 a los comandos del compilador
+// enums anonimos, creo son C11
+enum {
+    UNO,
+    DOS
+};
+
+enum {
+    ONE,
+    TWO
+};
+
 int main()
 {	
     CyGlobalIntEnable;
