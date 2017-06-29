@@ -27,15 +27,14 @@ int main()
     UART_PutString("Test W5500.\r\n");
     SPI_Start();
 
-    #if 1
     if ( CYRET_SUCCESS == ETH_Start() ) {
         UART_PutString("CYRET_SUCCESS.\r\n");
     } else { // CYRET_TIMEOUT
         UART_PutString("CYRET_TIMEOUT.\r\n");
     }
-    #endif
     
     while (1) {
+
         socket = ETH_TcpOpenServer( 8080 );
         if ( 0xFF == socket) {
             UART_PutString("Socket not openned.\r\n");
@@ -43,6 +42,7 @@ int main()
             UART_PutString("Socket openned.\r\n");
         }
         
+        UART_PutString("Waiting for connection.\r\n");
         tcp_connection = ETH_TcpWaitForConnection( socket );
         if ( CYRET_SUCCESS == tcp_connection ) {
             UART_PutString("Connection stablished.\r\n");
@@ -50,7 +50,27 @@ int main()
             UART_PutString("We got an error.\r\n");
         }
         
-    	ETH_TcpPrint(socket, "Hello world!");
+        /*
+        tcp_connection = ETH_TcpConnected( socket );
+        switch( tcp_connection ){
+        case 0: // Socket not established
+            UART_PutString("Socket not established.\r\n");
+            break;
+        case 0xFF:
+            UART_PutString("Socket not openned.\r\n");
+            break;
+        case 0x80:
+            UART_PutString("Socket Timeout.\r\n");
+            break;
+        case 0x01:
+            UART_PutString("Socket Connection.\r\n");
+            ETH_TcpPrint(socket, "PSoC Latinoamerica\r\nPSoC Rocks!");
+            break;
+        default:
+            break;
+        }
+        */
+        ETH_TcpPrint(socket, "PSoC Latinoamerica\r\nPSoC Rocks!");
         
         tcp_connection = ETH_SocketDisconnect( socket );
         if ( CYRET_BAD_PARAM == tcp_connection ) {
