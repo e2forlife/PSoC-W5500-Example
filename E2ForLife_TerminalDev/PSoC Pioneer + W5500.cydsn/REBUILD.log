@@ -1,0 +1,6 @@
+--------------- Rebuild Started: 06/28/2017 13:55:40 Project: w5500.c, Configuration: ARM GCC 5.4-2016-q2-update Debug ---------------
+arm-none-eabi-gcc.exe -c E2ForLife_W5500_v1_0\API\w5500.c -o .\CortexM0\ARM_GCC_541\Debug\w5500.o -mcpu=cortex-m0 -mthumb -I. -IGenerated_Source\PSoC4 -Wa,-alh=.\CortexM0\ARM_GCC_541\Debug/w5500.lst -g -D DEBUG -Wall -ffunction-sections -ffat-lto-objects -O0
+E2ForLife_W5500_v1_0\API\w5500.c:40:19: fatal error: CyLib.h: No such file or directory
+compilation terminated.
+The command 'arm-none-eabi-gcc.exe' failed with exit code '1'.
+--------------- Rebuild Failed: 06/28/2017 13:55:42 ---------------

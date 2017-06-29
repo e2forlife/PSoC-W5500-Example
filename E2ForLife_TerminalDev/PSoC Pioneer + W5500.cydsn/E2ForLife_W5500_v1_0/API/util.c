@@ -34,22 +34,20 @@
  * 
  * Function implementations for IoT utility functions used by the W5500 driver
  */
-/* ======================================================================== */
-#include <cytypes.h>
-#include <CyLib.h>
-
 #include "`$INSTANCE_NAME`.h"
+#include "`$INSTANCE_NAME`_util.h"
 
-/* ------------------------------------------------------------------------ */
+#include <cytypes.h> // stdint.h, cystatus
+#include <CyLib.h> // string.h, ctype.h
+
 #define _HEX2BIN(x) \
 ( ((x>='0')&&(x<='9'))? (x-'0') : \
   ((x>='a')&&(x<='f'))? ((x-'a')+10) : \
   ((x>='A')&&(x<='F'))? ((x-'A')+10) : 0 )
-/* ------------------------------------------------------------------------ */
+
 #define _BIN2HEX(x) \
 ( (x>9)? ((x-10)+'A') : (x + '0'))
 
-/* ------------------------------------------------------------------------ */
 #define _DECODE64_WHITESPACE 64
 #define _DECODE64_EQUALS     65
 #define _DECODE64_INVALID    66
@@ -69,11 +67,11 @@
 uint32_t `$INSTANCE_NAME`_ParseIP( const char* ipString )
 {
 	// Parse a human readable string in to a IP address usable by the hardare
-	char digit[5];
-	uint8_t ip[4];
-    int index = 0,
-        counter = 0,
-        dindex = 0;
+	char digit[5] = {0};
+	uint8_t ip[4] = {0};
+    uint8_t index = 0;
+    uint8_t counter = 0;
+    uint8_t dindex = 0;
 	
 	while ( (counter < 4) && ((unsigned int)index < strlen(ipString) ) ) {
 		if ( (ipString[index] >= '0' ) && (ipString[index] <= '9') ) {
@@ -101,10 +99,10 @@ uint32_t `$INSTANCE_NAME`_ParseIP( const char* ipString )
 		++index;
 	}
 	
-	if (counter != 4) {
-		return( 0xFFFFFFFF );
+	if ( counter != 4 ) {
+		return 0xFFFFFFFF;
 	} else {
-		return( `$INSTANCE_NAME`_IPADDRESS(ip[0], ip[1], ip[2], ip[3]) );
+		return `$INSTANCE_NAME`_IPADDRESS(ip[0], ip[1], ip[2], ip[3]);
 	}
 }
 
@@ -117,15 +115,16 @@ cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8_t *mac)
 {
 	/* 
 	 * a mac address is specified as a string of 6 hex bytes with
-	 * dashes ('-') seperating the bytes.  An invalidly formed
+	 * colon (':') seperating the bytes.  An invalidly formed
 	 * address will only process the values up the error and return BAD_DATA
 	 * otherwise, SUCESS is returned.
 	 */
-	int digit;
 	uint16 index = 0;
 	cystatus result = CYRET_SUCCESS;
 
-	for(digit = 0;(digit<6) && (result == CYRET_SUCCESS)&&(macString[index] != 0);++digit) {
+	for( uint8_t digit = 0;
+        (digit<6) && (result == CYRET_SUCCESS)&&(macString[index] != 0);
+        ++digit) {
 		// process the first nibble
 		if (isxdigit((int)macString[index]) ) {
 			mac[digit] = _HEX2BIN(macString[index]);
@@ -150,7 +149,7 @@ cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8_t *mac)
 		}
 	}
     
-	return( result );
+	return result;
 }
 
 /**
@@ -159,23 +158,22 @@ cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8_t *mac)
  * \param macString (*char) pointer to an ASCII-Z string buffer to hold output
  *
  * This function takes the passed array of 6 bytes and converts it to an
- * ASCI-Z string containing HEX values and a dash (-) delimiter between bytes
+ * ASCI-Z string containing HEX values and a colon (:) delimiter between bytes
  * of the harware address.  This is a nice fucntion for displaying a MAC
  * address, but otherwise not really required for functionality
  */
 void `$INSTANCE_NAME`_StringMAC(uint8_t *mac, char *macString)
 {
-	int digit,
-	    index = 0;
+	uint8_t index = 0;
 	
 	// first read the MAC address from the chip
 	// and inintialize some locals so that the
 	// string formater will function properly
-	for(digit=0;digit<6;++digit) {
+	for( uint8_t digit = 0; digit < 6; ++digit ) {
 		// convert the first nibble
-		macString[index++] = _BIN2HEX(((mac[digit]>>4)&0x0F));
-		macString[index++] = _BIN2HEX((mac[digit]&0x0F));
-		if (digit<5) {
+		macString[index++] = _BIN2HEX((( mac[digit] >> 4) & 0x0F ));
+		macString[index++] = _BIN2HEX(( mac[digit] & 0x0F ));
+		if ( digit < 5 ) {
 			macString[index++] = ':';
 		}
 		else {
@@ -196,28 +194,29 @@ void `$INSTANCE_NAME`_StringMAC(uint8_t *mac, char *macString)
  */
 void `$INSTANCE_NAME`_StringIP( uint32_t ip, char *ipString )
 {
-	uint8 *ipBytes = (uint8*) &ip;
-	int index = 0,
-	    digit,
-	    work,
-        temp;
+	uint8_t *ipBytes = (uint8_t*) &ip;
+	uint8_t index = 0;
+	//int digit = 0;
+	uint32_t work = 0;
+    uint32_t temp = 0;
 	
 	//ipBytes = (uint8*)&ip;
 	//index = 0;
-	for(digit=0;digit<4;++digit) {
+	for( uint8_t digit = 0; digit < 4; ++digit ) {
 		work = ipBytes[digit];
-		if (work >= 100) {
-			temp = work/100;
-			work -= (temp*100);
+        
+		if ( work >= 100 ) {
+			temp = work / 100;
+			work -= (temp * 100);
 			ipString[index++] = '0' + temp;
 		}
-		if (work >= 10) {
-			temp = work /10;
-			work -= (temp*10);
-			ipString[index++] = '0'+temp;
+		if ( work >= 10 ) {
+			temp = work / 10;
+			work -= (temp * 10);
+			ipString[index++] = '0' + temp;
 		}
-		ipString[index++] = '0'+work;
-		if (digit <3) {
+		ipString[index++] = '0' + work;
+		if ( digit < 3 ) {
 			ipString[index++] = '.';
 		} else {
 			ipString[index] = 0;
@@ -239,24 +238,27 @@ void `$INSTANCE_NAME`_StringIP( uint32_t ip, char *ipString )
 int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* result, int resultSize)
 {
     const char base64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    const uint8 *dat = (const uint8 *)data_buf;
-    int resultIndex = 0,
-        x,
-        padCount = dataLength % 3;
+    const uint8_t *dat = (const uint8_t *)data_buf;
+    int resultIndex = 0;
+    int x = 0;
+    int padCount = dataLength % 3;
     uint32_t n = 0;
-    uint8_t n0, n1, n2, n3;
+    uint8_t n0 = 0;
+    uint8_t n1 = 0;
+    uint8_t n2= 0;
+    uint8_t n3 = 0;
  
     // increment over the length of the string, three characters at a time
-    for (x = 0; x < dataLength; x += 3) {
+    for ( x = 0; x < dataLength; x += 3 ) {
         // these three 8-bit (ASCII) characters become one 24-bit number
         n = dat[x] << 16;
   
-        if((x+1) < dataLength) {
-            n += dat[x+1] << 8;
+        if ( ( x + 1 ) < dataLength ) {
+            n += dat[ x + 1 ] << 8;
         }
   
-        if((x+2) < dataLength) {
-            n += dat[x+2];
+        if ( ( x + 2 ) < dataLength ) {
+            n += dat[ x + 2 ];
         }
   
         // this 24-bit number gets separated into four 6-bit numbers
@@ -266,20 +268,33 @@ int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* re
         n3 = (uint8)n & 63;
  
         // if we have one byte available, then its encoding is spread out over two characters
-        if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
+        if ( resultIndex >= resultSize ) {
+            return 0;   // indicate failure: buffer too small
+        }
+        
         result[resultIndex++] = base64chars[n0];
-        if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
+        
+        if ( resultIndex >= resultSize ) {
+            return 0;   // indicate failure: buffer too small
+        }
+        
         result[resultIndex++] = base64chars[n1];
  
         // if we have only two bytes available, then their encoding is spread out over three chars
-        if((x+1) < dataLength) {
-            if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
+        if ( ( x + 1 ) < dataLength ) {
+            
+            if( resultIndex >= resultSize ) {
+                return 0;   // indicate failure: buffer too small
+            }
+            
             result[resultIndex++] = base64chars[n2];
         }
  
         // if we have all three bytes available, then their encoding is spread out over four characters
-        if((x+2) < dataLength) {
-            if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
+        if ( ( x + 2 ) < dataLength ) {
+            if( resultIndex >= resultSize ) {
+                return 0;   // indicate failure: buffer too small
+            }
             result[resultIndex++] = base64chars[n3];
         }
     }
@@ -287,12 +302,18 @@ int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* re
     // create and add padding that is required if we did not have a multiple of 3 number of characters available
     if (padCount > 0) 
     {
-      for (; padCount < 3; padCount++) {
-            if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
+      for ( ; padCount < 3; padCount++ ) {
+            if ( resultIndex >= resultSize ) {
+                return 0;   // indicate failure: buffer too small
+            }
             result[resultIndex++] = '=';
         } 
     }
-    if(resultIndex >= resultSize) return 0;   /* indicate failure: buffer too small */
+    
+    if( resultIndex >= resultSize ) {
+        return 0;   // indicate failure: buffer too small
+    }
+    
     result[resultIndex] = 0;
 
     return 1;   // indicate success
@@ -319,8 +340,8 @@ int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* re
 int `$INSTANCE_NAME`_Base64Decode (char *in, int inLen, uint8_t *out, int *outLen)
 { 
     char *end = in + inLen;
-    int buf = 1,
-        len = 0;
+    int buf = 1;
+    int len = 0;
  	uint8_t c;
 	
     while (in < end) {
@@ -363,13 +384,14 @@ int `$INSTANCE_NAME`_Base64Decode (char *in, int inLen, uint8_t *out, int *outLe
         *out++ = buf >> 4;
     }
  
-    *outLen = len; /* modify to reflect the actual output size */
+    *outLen = len; // modify to reflect the actual output size
     
     return 0;
 }
 
-uint32_t `$INSTANCE_NAME`_IPADDRESS(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4 )
+uint32_t `$INSTANCE_NAME`_IPADDRESS( const uint8_t x1, const uint8_t x2, const uint8_t x3, const uint8_t x4 )
 {
+#if 0
 	uint32_t adr;
 	uint8_t* ptr = (uint8*)&adr;
 	
@@ -380,6 +402,21 @@ uint32_t `$INSTANCE_NAME`_IPADDRESS(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t 
     ptr[3] = x4;
     
 	return adr;
+#else
+    union {
+        uint32_t adr;        
+        uint8_t ptr[4];
+    } u;
+    
+    u.ptr[0] = x1;
+    u.ptr[1] = x2;
+    u.ptr[2] = x3;
+    u.ptr[3] = x4;
+    
+    return u.adr;
+    
+#endif
+    
 }
 
 /**

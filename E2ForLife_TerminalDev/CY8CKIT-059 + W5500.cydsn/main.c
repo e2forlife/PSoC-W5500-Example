@@ -1,27 +1,39 @@
 #include "project.h"
 
-// Para habilitar el soporte a C11 en compiladores "antiguos"
-// agregar -std=c11 a los comandos del compilador
-// enums anonimos, creo son C11
-enum {
-    UNO,
-    DOS
-};
-
-enum {
-    ONE,
-    TWO
-};
+void W5500_Write(uint16_t addr, uint8_t offset, uint8_t data)
+{
+    ETH_CSN_Write(1);
+    SPI_WriteTxData( HI8(addr) );
+    SPI_WriteTxData( LO8(addr) );
+    
+    offset |= 0x05;
+    SPI_WriteTxData( offset );
+    
+    SPI_WriteTxData( data );
+    
+    while( !( SPI_ReadTxStatus() & SPI_STS_SPI_DONE ) );
+    
+    ETH_CSN_Write(1);
+}
 
 int main()
 {	
+    uint8_t socket;
+    cystatus tcp_connection;
+    
     CyGlobalIntEnable;
     
     UART_Start();
-	ETH_Start();
-    
-    uint8_t socket;
-    cystatus tcp_connection;
+    UART_PutString("Test W5500.\r\n");
+    SPI_Start();
+
+    #if 1
+    if ( CYRET_SUCCESS == ETH_Start() ) {
+        UART_PutString("CYRET_SUCCESS.\r\n");
+    } else { // CYRET_TIMEOUT
+        UART_PutString("CYRET_TIMEOUT.\r\n");
+    }
+    #endif
     
     while (1) {
         socket = ETH_TcpOpenServer( 8080 );

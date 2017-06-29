@@ -1,4 +1,3 @@
-/* ------------------------------------------------------------------------ */
 /**
  * \addtogroup e2forlife_w5500
  * @{
@@ -36,7 +35,7 @@
  * Implementation of the TCP protocol using the internal WizNET protocol stack
  * in the iEthernet devices.
  */
-/* ======================================================================== */
+
 #include <cytypes.h>
 #include <CyLib.h>
 #include <string.h>
@@ -47,9 +46,9 @@ extern uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 
 uint8_t `$INSTANCE_NAME`_UdpOpen( uint16_t port )
 {
-	uint8_t socket,
-	        status = `$INSTANCE_NAME`_SR_CLOSED,
-	        tries = 0;
+	uint8_t socket = 0;
+    uint8_t status = `$INSTANCE_NAME`_SR_CLOSED;
+    uint8_t tries = 0;
 	
 	do {
 		socket = `$INSTANCE_NAME`_SocketOpen(port, `$INSTANCE_NAME`_PROTO_UDP);
@@ -62,7 +61,7 @@ uint8_t `$INSTANCE_NAME`_UdpOpen( uint16_t port )
 			}
 		}
 		++tries;
-	} while ( (tries < 5) && (status != `$INSTANCE_NAME`_SR_UDP) );
+	} while ( (tries < 5) && ( status != `$INSTANCE_NAME`_SR_UDP ) );
 	
 	return socket;
 }
@@ -84,25 +83,24 @@ uint16_t `$INSTANCE_NAME`_UdpSend(uint8_t socket, uint32_t ip, uint16_t port, ui
 	return tx_length;
 }
 
-
 uint16_t `$INSTANCE_NAME`_UdpReceive(uint8_t socket, uint8_t *header, uint8_t *buffer, uint16_t len, uint8_t flags)
 {
-	uint16_t rx_size,
-            bytes = 0,
-            ptr;
+	uint16_t rx_size = 0;
+    uint16_t bytes = 0;
+    uint16_t ptr = 0;
 	
 	// request the length of the data block available for reading, but, add
 	// the header size (8 bytes) to the length of data requested to account
 	// for the header sitting in the Rx Buffers.
 	do {
 		rx_size = `$INSTANCE_NAME`_RxDataReady( socket );
-	} while ( (rx_size < 8) && (flags&`$INSTANCE_NAME`_TXRX_FLG_WAIT) );
+	} while ( ( 8 > rx_size ) && ( flags & `$INSTANCE_NAME`_TXRX_FLG_WAIT ) );
 	
 	// if there is data to read from the buffer...
-	if (rx_size > 7) { 
+	if ( 7 < rx_size ) {
 		// calculate the number of bytes to receive using the available data
 		// and the requested length of data.
-		bytes = (rx_size > len) ? len : rx_size;
+		bytes = ( rx_size > len ) ? len : rx_size;
 		// Read the starting memory pointer address, and endian correct
 		`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_RX_RD, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&ptr,2);
 		ptr = CYSWAP_ENDIAN16( ptr );
@@ -111,7 +109,7 @@ uint16_t `$INSTANCE_NAME`_UdpReceive(uint8_t socket, uint8_t *header, uint8_t *b
 		ptr += 8;
 		// read the number of bytes to read from the UDP header
 		bytes = header[6];
-		bytes = (bytes<<8) + header[7];
+		bytes = ( bytes << 8 ) + header[7];
 		
 		// Retrieve the length of data from the received UDP packet, starting
 		// right after the end of the packet header.
@@ -137,5 +135,6 @@ uint16_t `$INSTANCE_NAME`_UdpReceive(uint8_t socket, uint8_t *header, uint8_t *b
 /**
  * \todo Send Multi-cast data
  */
+
 /** @} */
 /* [] END OF FILE */
