@@ -42,6 +42,7 @@
 #include <CyLib.h>
 
 #include "`$INSTANCE_NAME`.h"
+#include "`$INSTANCE_NAME`_socket.h"
 
 extern uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 

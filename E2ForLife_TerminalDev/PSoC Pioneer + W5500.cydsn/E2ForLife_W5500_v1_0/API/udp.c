@@ -41,6 +41,7 @@
 #include <string.h>
 
 #include "`$INSTANCE_NAME`.h"
+#include "`$INSTANCE_NAME`_udp.h"
 
 extern uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 

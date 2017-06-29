@@ -606,6 +606,11 @@ cystatus `$INSTANCE_NAME`_StartEx( const char *gateway, const char *subnet, cons
     uint8_t *m_mac = NULL;
     uint8_t *m_ip = NULL;
     
+    // Start the SPI component
+    `$SPI_INSTANCE`_Start();
+    // Set CSN pin high
+    `$CS_INSTANCE`_Write(0xFF);
+    
 	// Wait for initial power-on PLL Lock, and issue a device reset
 	// to initialize the registers
 	CyDelay(`$INSTANCE_NAME`_RESET_DELAY);

@@ -41,6 +41,7 @@
 #include <string.h>
 
 #include "`$INSTANCE_NAME`.h"
+#include "`$INSTANCE_NAME`_tcp.h"
 
 extern uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 
@@ -324,7 +325,10 @@ uint16_t `$INSTANCE_NAME`_TcpReceive(uint8_t socket, uint8_t* buffer, uint16_t l
 	return bytes;
 }
 
-
+/**
+ * @brief TCP Get char.
+ *
+ */
 char `$INSTANCE_NAME`_TcpGetChar( uint8_t socket )
 {
 	char ch = 0;
@@ -337,7 +341,10 @@ char `$INSTANCE_NAME`_TcpGetChar( uint8_t socket )
 	return ch;
 }
 
-
+/**
+ * @brief TCP Get line.
+ *
+ */
 int `$INSTANCE_NAME`_TcpGetLine( uint8_t socket, char *buffer )
 {
 	char ch = 0;
