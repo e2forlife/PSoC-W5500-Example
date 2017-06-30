@@ -40,22 +40,22 @@ int main()
             UART_PutString("Socket not openned.\r\n");
         } else {
             UART_PutString("Socket openned.\r\n");
-            UART_PutString("Waiting for connection.\r\n");
-            tcp_connection = ETH_TcpWaitForConnection( socket );
-            if ( CYRET_SUCCESS == tcp_connection ) {
-                UART_PutString("Connection stablished.\r\n");
-            } else { // CYRET_BAD_PARAM
-                UART_PutString("We got an error.\r\n");
-            }
+                    UART_PutString("Waiting for connection.\r\n");
+        tcp_connection = ETH_TcpWaitForConnection( socket );
+        if ( CYRET_SUCCESS == tcp_connection ) {
+            UART_PutString("Connection stablished.\r\n");
+        } else { // CYRET_BAD_PARAM
+            UART_PutString("We got an error.\r\n");
+        }
 
-            ETH_TcpPrint(socket, "PSoC Latinoamerica\r\nPSoC Rocks!");
+        ETH_TcpPrint(socket, "PSoC Rocks!");
             
-            tcp_connection = ETH_SocketDisconnect( socket );
-            if ( CYRET_BAD_PARAM == tcp_connection ) {
-                UART_PutString("We got a problem.\r\n");
-            } else { // CYRET_SUCCESS
-                UART_PutString("Socket closed.\r\n");
-            }
+        tcp_connection = ETH_SocketDisconnect( socket );
+        if ( CYRET_BAD_PARAM == tcp_connection ) {
+            UART_PutString("We got a problem.\r\n");
+        } else { // CYRET_SUCCESS
+            UART_PutString("Socket closed.\r\n");
+        }
         }
         
         CyDelay(2000);
