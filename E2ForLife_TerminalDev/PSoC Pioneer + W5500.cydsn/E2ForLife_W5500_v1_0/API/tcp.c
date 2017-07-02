@@ -283,8 +283,18 @@ void `$INSTANCE_NAME`_TcpPrint(uint8_t socket, const char* string )
 	`$INSTANCE_NAME`_TcpSend(socket, (uint8*) string,length, 0);
 }
 
-
-uint16_t `$INSTANCE_NAME`_TcpReceive(uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags)
+/**
+ * @brief
+ *
+ * @param 
+ * @param
+ * @param
+ * @param
+ *
+ * @return
+ */
+uint16_t `$INSTANCE_NAME`_TcpReceive( uint8_t socket, uint8_t* buffer,
+                                        uint16_t len, uint8_t flags )
 {
 	uint16_t rx_size = 0;
     uint16_t ptr = 0;
@@ -328,6 +338,9 @@ uint16_t `$INSTANCE_NAME`_TcpReceive(uint8_t socket, uint8_t* buffer, uint16_t l
 /**
  * @brief TCP Get char.
  *
+ * @param 
+ *
+ * @return
  */
 char `$INSTANCE_NAME`_TcpGetChar( uint8_t socket )
 {
@@ -344,6 +357,10 @@ char `$INSTANCE_NAME`_TcpGetChar( uint8_t socket )
 /**
  * @brief TCP Get line.
  *
+ * @param 
+ * @param 
+ *
+ * @return
  */
 int `$INSTANCE_NAME`_TcpGetLine( uint8_t socket, char *buffer )
 {
@@ -361,7 +378,7 @@ int `$INSTANCE_NAME`_TcpGetLine( uint8_t socket, char *buffer )
 				buffer[idx] = 0;
 			}
 		}
-	} while ( (ch!='\r') && (ch!='\n'));
+	} while ( ( ch != '\r' ) && ( ch != '\n' ) );
     
 	buffer[idx] = 0;
 	

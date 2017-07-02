@@ -54,7 +54,7 @@ extern uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
  * This function writes teh command register then waits for the command
  * register to return a 0. then it returns the last read value.
  */
-cystatus `$INSTANCE_NAME`_ExecuteSocketCommand(uint8_t socket, uint8_t cmd )
+cystatus `$INSTANCE_NAME`_ExecuteSocketCommand( uint8_t socket, uint8_t cmd )
 {
 	uint8_t result = 0;
 	uint32_t timeout = 0;
@@ -221,7 +221,12 @@ cystatus `$INSTANCE_NAME`_SocketDisconnect( uint8_t sock )
 }
 
 /**
- * \brief Check to see if a SEND operation was completed.
+ * @brief Check to see if a SEND operation was completed.
+ *
+ * @param 
+ * @param 
+ *
+ * @return
  */
 cystatus `$INSTANCE_NAME`_SocketSendComplete( uint8_t socket )
 {

@@ -102,151 +102,6 @@
 
 uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 
-void `$INSTANCE_NAME`_Write(uint16_t offset, uint8_t block_select, uint8_t* data, size_t size)
-{
-#if 1
-	// set write bit in the control phase data
-	//block_select |= 0x04; 
-    
-	// select the data mode based on the block length    
-    switch ( size ) {
-    case 1:
-        block_select |= 0x05; // 0x04 | 0x01
-        break;
-    case 2:
-        block_select |= 0x06; // 0x04 | 0x02
-        break;
-    case 4:
-        block_select |= 0x07; // 0x04 | 0x03
-        break;
-    default:
-        break;
-    }
-	
-    // Set /SS low
-	`$CS_INSTANCE`_Write(~(`$INSTANCE_NAME`_CS_MASK));
-    
-	// send the address phase data
-	`$SPI_INSTANCE`_WriteTxData( HI8(offset) );
-	`$SPI_INSTANCE`_WriteTxData( LO8(offset) );
-    
-	// send the control phase data
-	`$SPI_INSTANCE`_WriteTxData( block_select );
-    
-	// clear data read during the previous SPI write.  FIrst, wait for data
-	// to arrive in the RX fifo (if not has yet been received), then, read the
-	// data and wait for 3 data elements to be read (the length of the header
-	// sent during the address and control phase of the protocol
-    //`$SPI_INSTANCE`_ClearRxBuffer();
-    //`$SPI_INSTANCE`_ClearTxBuffer();
-	 
-	// Now that the Receive FIFO has been flushed, send data through
-	// the SPI port and wait for the receive buffer to contain data. Once the
-	// receive buffer contains data, read the data and store it in to the
-	// buffer.
-    for ( uint8_t count = 0; count < size; count++) {
-	    `$SPI_INSTANCE`_WriteTxData( data[count] );
-    }
-    
-    while ( 0 == ( `$SPI_INSTANCE`_ReadTxStatus() & `$SPI_INSTANCE`_STS_SPI_IDLE ) );
-    
-	// Set high the chip select.
-	`$CS_INSTANCE`_Write(0xFF);
-#else
-    // https://olduino.wordpress.com/2014/11/28/he-says-she-says-incremental-success-with-the-w5500/
-    // Variable Length Write to Common or Socket areas
-    // opcode is xxxx x100
-    // xxxxx is:
-    // 00000 for Common area
-    // 00001 Socket 0 register
-    // 00010 Socket 0 Tx buffer
-    
-    `$SPI_INSTANCE`_ClearRxBuffer();
-    `$SPI_INSTANCE`_ClearTxBuffer();
-	
-	// set write bit in the control phase data
-	block_select |= 0x04;
-    block_select |= 0x01;
-	
-    // /SS active
-    `$CS_INSTANCE`_Write( `$INSTANCE_NAME`_CS_ASSERT );
-	//`$CS_INSTANCE`_Write(~(`$INSTANCE_NAME`_CS_MASK));
-    
-	// send the address phase data
-	`$SPI_INSTANCE`_WriteTxData( HI8(offset) );
-	`$SPI_INSTANCE`_WriteTxData( LO8(offset) );
-    
-	// send the control phase data - Send wiznet write opcode
-	`$SPI_INSTANCE`_WriteTxData( block_select );
-    // Write the actual data
-    `$SPI_INSTANCE`_WriteTxData( data );
-
-    // Wait for the transaction to be finished
-    while ( 0 == (`$SPI_INSTANCE`_ReadTxStatus() & `$SPI_INSTANCE`_STS_SPI_IDLE ) );
-    
-	// Set high the chip select.
-    //`$CS_INSTANCE`_Write( `$INSTANCE_NAME`_CS_DEASSERT );
-    `$CS_INSTANCE`_Write(0xFF);
-#endif
-}
-
-void `$INSTANCE_NAME`_WriteSingle(uint16_t offset, uint8_t block_select, uint8_t data)
-{
-    `$SPI_INSTANCE`_ClearRxBuffer();
-    `$SPI_INSTANCE`_ClearTxBuffer();
-    
-	// set write bit in the control phase data
-	//block_select |= 0x04; 
-    
-	// select the data mode based on the block length
-    block_select |= 0x05; // 0x04 | 0x01
-	
-    // Set /SS low
-	`$CS_INSTANCE`_Write( 0 );
-    
-	// send the address phase data
-	`$SPI_INSTANCE`_WriteTxData( HI8(offset) );
-	`$SPI_INSTANCE`_WriteTxData( LO8(offset) );
-    
-	// send the control phase data
-	`$SPI_INSTANCE`_WriteTxData( block_select );
-    
-	// clear data read during the previous SPI write.  FIrst, wait for data
-	// to arrive in the RX fifo (if not has yet been received), then, read the
-	// data and wait for 3 data elements to be read (the length of the header
-	// sent during the address and control phase of the protocol
-	 
-	// Now that the Receive FIFO has been flushed, send data through
-	// the SPI port and wait for the receive buffer to contain data. Once the
-	// receive buffer contains data, read the data and store it in to the
-	// buffer.
-	`$SPI_INSTANCE`_WriteTxData( data );
-    
-    //while ( 0 == ( `$SPI_INSTANCE`_ReadTxStatus() & `$SPI_INSTANCE`_STS_SPI_DONE ) );
-    
-    CyDelayUs(5);
-	// Set high the chip select.
-	`$CS_INSTANCE`_Write( 1 );
-    
-    // https://olduino.wordpress.com/2014/11/28/he-says-she-says-incremental-success-with-the-w5500/
-    // Variable Length Write to Common or Socket areas
-    // opcode is xxxx x100
-    // xxxxx is:
-    // 00000 for Common area
-    // 00001 Socket 0 register
-    // 00010 Socket 0 Tx buffer
-}
-
-void `$INSTANCE_NAME`_Read(uint16_t offset, uint8_t block_select, uint8_t* data, size_t size)
-{
-    // Variable Length Read to Common or Socket areas
-    // opcode is xxxx x000
-    // xxxxx is:
-    // 00000 for Common area
-    // 00001 Socket 0 register
-    // 00010 Socket 0 Tx buffer    
-}
-
 /**
  * \brief W5500 interface protocol write
  * \param offset address offset for the buffer access
@@ -456,6 +311,13 @@ void `$INSTANCE_NAME`_Send( uint16_t offset, uint8_t block_select, uint8_t write
 #endif
 }
 
+/**
+ * @brief
+ *
+ * @param 
+ *
+ * @return
+ */
 uint16_t `$INSTANCE_NAME`_RxDataReady( uint8_t socket )
 {
 	uint16_t first = 0;
@@ -476,6 +338,13 @@ uint16_t `$INSTANCE_NAME`_RxDataReady( uint8_t socket )
 	return CYSWAP_ENDIAN16(second);
 }
 
+/**
+ * @brief
+ *
+ * @param 
+ *
+ * @return
+ */
 uint16_t `$INSTANCE_NAME`_TxBufferFree( uint8_t socket )
 {
 	uint16_t first = 0;
@@ -496,6 +365,13 @@ uint16_t `$INSTANCE_NAME`_TxBufferFree( uint8_t socket )
 	return CYSWAP_ENDIAN16(second);
 }
 
+/**
+ * @brief
+ *
+ * @param 
+ *
+ * @return
+ */
 void `$INSTANCE_NAME`_Reset( void )
 {
 	// issue a mode register reset to the W5500 in order to set default
@@ -519,6 +395,16 @@ void `$INSTANCE_NAME`_Reset( void )
 #endif
 }
 
+/**
+ * @brief
+ *
+ * @param 
+ * @param
+ * @param
+ * @param
+ *
+ * @return
+ */
 cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t* mac, uint8_t *ip )
 {
     uint8_t socket = 0;
@@ -663,11 +549,23 @@ cystatus `$INSTANCE_NAME`_StartEx( const char *gateway, const char *subnet, cons
 	return result;
 }
 
+/**
+ * @brief
+ *
+ * @param 
+ * @return
+ */
 void `$INSTANCE_NAME`_GetMac( uint8_t* mac )
 {
 	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, 0, mac, 6);
 }
 
+/**
+ * @brief
+ *
+ * @param 
+ * @return
+ */
 uint32_t `$INSTANCE_NAME`_GetIp( void )
 {
 	uint32 ipr = 0;
@@ -675,6 +573,15 @@ uint32_t `$INSTANCE_NAME`_GetIp( void )
 	return ipr;
 }
 
+/**
+ * @brief
+ *
+ * @param 
+ * @param
+ * @param
+ *
+ * @return
+ */
 uint16_t `$INSTANCE_NAME`_GetTxLength( uint8_t socket, uint16_t len, uint8_t flags )
 {
 	uint16_t tx_length = 0;
@@ -687,7 +594,7 @@ uint16_t `$INSTANCE_NAME`_GetTxLength( uint8_t socket, uint16_t len, uint8_t fla
 	
 	tx_length = `$INSTANCE_NAME`_TxBufferFree( socket );
     
-	if ( ( tx_length < len ) && ( ( flags & `$INSTANCE_NAME`_TXRX_FLG_WAIT ) != 0 ) ) {
+	if ( ( tx_length < len ) && ( 0 != ( flags & `$INSTANCE_NAME`_TXRX_FLG_WAIT ) ) ) {
 		
         // there is not enough room in the buffer, but the caller requested
 		// this to block until there was free space. So, check the memory
@@ -713,14 +620,26 @@ uint16_t `$INSTANCE_NAME`_GetTxLength( uint8_t socket, uint16_t len, uint8_t fla
 	return tx_length;
 }
 
-cystatus `$INSTANCE_NAME`_WriteTxData( uint8_t socket, uint8_t *buffer, uint16_t tx_length, uint8_t flags )
+/**
+ * @brief
+ *
+ * @param 
+ * @param
+ * @param
+ * @param
+ *
+ * @return
+ */
+cystatus `$INSTANCE_NAME`_WriteTxData( uint8_t socket, uint8_t *buffer,
+                                        uint16_t tx_length, uint8_t flags )
 {
 	uint16_t ptr = 0;
 	cystatus result;
 	
-	// The length of the Tx data block has now been determined, and can be copied in to the W5500 buffer memory.
-	// First read the pointer, then write data from the pointer forward, lastly update the pointer and issue
-	// the SEND command.
+	// The length of the Tx data block has now been determined, and can be
+    // copied in to the W5500 buffer memory.
+	// First read the pointer, then write data from the pointer forward,
+    // lastly update the pointer and issue the SEND command.
 	`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE( socket ), 0, (uint8*) &ptr, 2 );
     ptr = CYSWAP_ENDIAN16( ptr );
 	`$INSTANCE_NAME`_Send( ptr, `$INSTANCE_NAME`_TX_BASE( socket ), 1, buffer , tx_length );
@@ -740,6 +659,181 @@ cystatus `$INSTANCE_NAME`_WriteTxData( uint8_t socket, uint8_t *buffer, uint16_t
 	}
 	
 	return result;
+}
+
+/**
+ * @brief
+ *
+ * @param 
+ * @param
+ * @param
+ * @param
+ *
+ * @return
+ */
+void `$INSTANCE_NAME`_Write( uint16_t offset, uint8_t block_select,
+                                uint8_t* data, size_t size )
+{
+#if 1
+	// set write bit in the control phase data
+	//block_select |= 0x04; 
+    
+	// select the data mode based on the block length    
+    switch ( size ) {
+    case 1:
+        block_select |= 0x05; // 0x04 | 0x01
+        break;
+    case 2:
+        block_select |= 0x06; // 0x04 | 0x02
+        break;
+    case 4:
+        block_select |= 0x07; // 0x04 | 0x03
+        break;
+    default:
+        break;
+    }
+	
+    // Set /SS low
+	`$CS_INSTANCE`_Write(~(`$INSTANCE_NAME`_CS_MASK));
+    
+	// send the address phase data
+	`$SPI_INSTANCE`_WriteTxData( HI8(offset) );
+	`$SPI_INSTANCE`_WriteTxData( LO8(offset) );
+    
+	// send the control phase data
+	`$SPI_INSTANCE`_WriteTxData( block_select );
+    
+	// clear data read during the previous SPI write.  FIrst, wait for data
+	// to arrive in the RX fifo (if not has yet been received), then, read the
+	// data and wait for 3 data elements to be read (the length of the header
+	// sent during the address and control phase of the protocol
+    //`$SPI_INSTANCE`_ClearRxBuffer();
+    //`$SPI_INSTANCE`_ClearTxBuffer();
+	 
+	// Now that the Receive FIFO has been flushed, send data through
+	// the SPI port and wait for the receive buffer to contain data. Once the
+	// receive buffer contains data, read the data and store it in to the
+	// buffer.
+    for ( uint8_t count = 0; count < size; count++) {
+	    `$SPI_INSTANCE`_WriteTxData( data[count] );
+    }
+    
+    while ( 0 == ( `$SPI_INSTANCE`_ReadTxStatus() & `$SPI_INSTANCE`_STS_SPI_IDLE ) );
+    
+	// Set high the chip select.
+	`$CS_INSTANCE`_Write(0xFF);
+#else
+    // https://olduino.wordpress.com/2014/11/28/he-says-she-says-incremental-success-with-the-w5500/
+    // Variable Length Write to Common or Socket areas
+    // opcode is xxxx x100
+    // xxxxx is:
+    // 00000 for Common area
+    // 00001 Socket 0 register
+    // 00010 Socket 0 Tx buffer
+    
+    `$SPI_INSTANCE`_ClearRxBuffer();
+    `$SPI_INSTANCE`_ClearTxBuffer();
+	
+	// set write bit in the control phase data
+	block_select |= 0x04;
+    block_select |= 0x01;
+	
+    // /SS active
+    `$CS_INSTANCE`_Write( `$INSTANCE_NAME`_CS_ASSERT );
+	//`$CS_INSTANCE`_Write(~(`$INSTANCE_NAME`_CS_MASK));
+    
+	// send the address phase data
+	`$SPI_INSTANCE`_WriteTxData( HI8(offset) );
+	`$SPI_INSTANCE`_WriteTxData( LO8(offset) );
+    
+	// send the control phase data - Send wiznet write opcode
+	`$SPI_INSTANCE`_WriteTxData( block_select );
+    // Write the actual data
+    `$SPI_INSTANCE`_WriteTxData( data );
+
+    // Wait for the transaction to be finished
+    while ( 0 == (`$SPI_INSTANCE`_ReadTxStatus() & `$SPI_INSTANCE`_STS_SPI_IDLE ) );
+    
+	// Set high the chip select.
+    //`$CS_INSTANCE`_Write( `$INSTANCE_NAME`_CS_DEASSERT );
+    `$CS_INSTANCE`_Write(0xFF);
+#endif
+}
+
+/**
+ * @brief
+ *
+ * @param 
+ * @param
+ * @param
+ *
+ * @return
+ */
+void `$INSTANCE_NAME`_WriteSingle( uint16_t offset, uint8_t block_select, uint8_t data )
+{
+    `$SPI_INSTANCE`_ClearRxBuffer();
+    `$SPI_INSTANCE`_ClearTxBuffer();
+    
+	// set write bit in the control phase data
+	//block_select |= 0x04; 
+    
+	// select the data mode based on the block length
+    block_select |= 0x05; // 0x04 | 0x01
+	
+    // Set /SS low
+	`$CS_INSTANCE`_Write( 0 );
+    
+	// send the address phase data
+	`$SPI_INSTANCE`_WriteTxData( HI8(offset) );
+	`$SPI_INSTANCE`_WriteTxData( LO8(offset) );
+    
+	// send the control phase data
+	`$SPI_INSTANCE`_WriteTxData( block_select );
+    
+	// clear data read during the previous SPI write.  FIrst, wait for data
+	// to arrive in the RX fifo (if not has yet been received), then, read the
+	// data and wait for 3 data elements to be read (the length of the header
+	// sent during the address and control phase of the protocol
+	 
+	// Now that the Receive FIFO has been flushed, send data through
+	// the SPI port and wait for the receive buffer to contain data. Once the
+	// receive buffer contains data, read the data and store it in to the
+	// buffer.
+	`$SPI_INSTANCE`_WriteTxData( data );
+    
+    //while ( 0 == ( `$SPI_INSTANCE`_ReadTxStatus() & `$SPI_INSTANCE`_STS_SPI_DONE ) );
+    
+    CyDelayUs(5);
+	// Set high the chip select.
+	`$CS_INSTANCE`_Write( 1 );
+    
+    // https://olduino.wordpress.com/2014/11/28/he-says-she-says-incremental-success-with-the-w5500/
+    // Variable Length Write to Common or Socket areas
+    // opcode is xxxx x100
+    // xxxxx is:
+    // 00000 for Common area
+    // 00001 Socket 0 register
+    // 00010 Socket 0 Tx buffer
+}
+
+/**
+ * @brief
+ *
+ * @param 
+ * @param
+ * @param
+ * @param
+ *
+ * @return
+ */
+void `$INSTANCE_NAME`_Read( uint16_t offset, uint8_t block_select, uint8_t* data, size_t size )
+{
+    // Variable Length Read to Common or Socket areas
+    // opcode is xxxx x000
+    // xxxxx is:
+    // 00000 for Common area
+    // 00001 Socket 0 register
+    // 00010 Socket 0 Tx buffer    
 }
 
 /** @} */

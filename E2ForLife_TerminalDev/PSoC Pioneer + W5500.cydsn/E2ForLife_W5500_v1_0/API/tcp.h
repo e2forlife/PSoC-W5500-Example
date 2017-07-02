@@ -39,6 +39,7 @@
 #ifndef `$INSTANCE_NAME`_TCP_H
 #define `$INSTANCE_NAME`_TCP_H
 
+#include <cyfitter.h>
 #include <cytypes.h>
 #include <CyLib.h>
 

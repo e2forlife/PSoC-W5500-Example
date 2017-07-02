@@ -45,6 +45,13 @@
 
 extern uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 
+/**
+ * @brief
+ *
+ * @param 
+ *
+ * @return
+ */
 uint8_t `$INSTANCE_NAME`_UdpOpen( uint16_t port )
 {
 	uint8_t socket = 0;
@@ -68,9 +75,19 @@ uint8_t `$INSTANCE_NAME`_UdpOpen( uint16_t port )
 }
 
 /**
- * \brief Send a block of data using UDP.
+ * @brief Send a block of data using UDP.
+ *
+ * @param 
+ * @param
+ * @param
+ * @param
+ * @param
+ * @param
+ *
+ * @return
  */
-uint16_t `$INSTANCE_NAME`_UdpSend(uint8_t socket, uint32_t ip, uint16_t port, uint8_t *buffer, uint16_t len, uint8_t flags)
+uint16_t `$INSTANCE_NAME`_UdpSend( uint8_t socket, uint32_t ip, uint16_t port,
+                                    uint8_t *buffer, uint16_t len, uint8_t flags )
 {
 	uint16_t tx_length = `$INSTANCE_NAME`_GetTxLength(socket,len,flags);
 	
@@ -84,7 +101,19 @@ uint16_t `$INSTANCE_NAME`_UdpSend(uint8_t socket, uint32_t ip, uint16_t port, ui
 	return tx_length;
 }
 
-uint16_t `$INSTANCE_NAME`_UdpReceive(uint8_t socket, uint8_t *header, uint8_t *buffer, uint16_t len, uint8_t flags)
+/**
+ * @brief
+ *
+ * @param 
+ * @param
+ * @param
+ * @param
+ * @param
+ *
+ * @return
+ */
+uint16_t `$INSTANCE_NAME`_UdpReceive( uint8_t socket, uint8_t *header,
+                                        uint8_t *buffer, uint16_t len, uint8_t flags )
 {
 	uint16_t rx_size = 0;
     uint16_t bytes = 0;

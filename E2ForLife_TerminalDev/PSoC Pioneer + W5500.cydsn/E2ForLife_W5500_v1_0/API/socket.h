@@ -39,6 +39,7 @@
 #ifndef `$INSTANCE_NAME`_SOCKET_H
 #define `$INSTANCE_NAME`_SOCKET_H
 
+#include <cyfitter.h>
 #include <cytypes.h>
 #include <CyLib.h>
     

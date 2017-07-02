@@ -34,6 +34,7 @@
  * 
  * Function implementations for IoT utility functions used by the W5500 driver
  */
+
 #include "`$INSTANCE_NAME`.h"
 #include "`$INSTANCE_NAME`_util.h"
 
@@ -389,7 +390,18 @@ int `$INSTANCE_NAME`_Base64Decode (char *in, int inLen, uint8_t *out, int *outLe
     return 0;
 }
 
-uint32_t `$INSTANCE_NAME`_IPADDRESS( const uint8_t x1, const uint8_t x2, const uint8_t x3, const uint8_t x4 )
+/**
+ * @brief
+ *
+ * @param 
+ * @param
+ * @param
+ * @param
+ *
+ * @return
+ */
+uint32_t `$INSTANCE_NAME`_IPADDRESS( const uint8_t x1, const uint8_t x2,
+                                        const uint8_t x3, const uint8_t x4 )
 {
 #if 0
 	uint32_t adr;

@@ -39,11 +39,12 @@
 #ifndef `$INSTANCE_NAME`_UDP_H
 #define `$INSTANCE_NAME`_UDP_H
 
+#include <cyfitter.h>
 #include <cytypes.h>
 
 uint8_t `$INSTANCE_NAME`_UdpOpen( uint16_t port );
-uint16_t `$INSTANCE_NAME`_UdpSend(uint8_t socket, uint32_t ip, uint16_t port, uint8_t *buffer, uint16_t len, uint8_t flags);
-uint16_t `$INSTANCE_NAME`_UdpReceive(uint8_t socket, uint8_t *header, uint8_t *buffer, uint16_t len, uint8_t flags);
+uint16_t `$INSTANCE_NAME`_UdpSend( uint8_t socket, uint32_t ip, uint16_t port, uint8_t *buffer, uint16_t len, uint8_t flags );
+uint16_t `$INSTANCE_NAME`_UdpReceive( uint8_t socket, uint8_t *header, uint8_t *buffer, uint16_t len, uint8_t flags );
 
 #endif /* `$INSTANCE_NAME`_UDP_H */
 

@@ -40,6 +40,7 @@
 #ifndef `$INSTANCE_NAME`_H
 #define `$INSTANCE_NAME`_H
 
+#include <cyfitter.h>
 #include <cytypes.h>
 #include <string.h> // size_t
 
@@ -54,10 +55,10 @@
 // This contains the calculated MAX sockets based on available memory
 #define `$INSTANCE_NAME`_MAX_SOCKETS        ( `$INSTANCE_NAME`_CHIP_MEM / `$INSTANCE_NAME`_SOCKET_MEM )
 	
-#define `$INSTANCE_NAME`_SOCKET_BAD(x)      ( (x >= `$INSTANCE_NAME`_MAX_SOCKETS) || (`$INSTANCE_NAME`_socketStatus[x] == `$INSTANCE_NAME`_SOCKET_AVAILABLE) )
+#define `$INSTANCE_NAME`_SOCKET_BAD(x)      ( ( x >= `$INSTANCE_NAME`_MAX_SOCKETS) || ( `$INSTANCE_NAME`_socketStatus[x] == `$INSTANCE_NAME`_SOCKET_AVAILABLE ) )
 
-#define `$INSTANCE_NAME`_SOCKET_OPEN           ( 1 )
-#define `$INSTANCE_NAME`_SOCKET_AVAILABLE       ( 0 )
+#define `$INSTANCE_NAME`_SOCKET_OPEN        ( 1 )
+#define `$INSTANCE_NAME`_SOCKET_AVAILABLE   ( 0 )
 
 // Macros & Function Defines
 
