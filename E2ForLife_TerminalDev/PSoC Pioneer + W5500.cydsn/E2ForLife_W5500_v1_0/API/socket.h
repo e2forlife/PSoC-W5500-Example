@@ -43,7 +43,8 @@
 #include <cytypes.h>
 #include <CyLib.h>
     
-cystatus `$INSTANCE_NAME`_ExecuteSocketCommand(uint8_t socket, uint8_t cmd );
+// https://github.com/Wiznet/ioLibrary_Driver/blob/master/Ethernet/socket.h
+cystatus `$INSTANCE_NAME`_ExecuteSocketCommand( uint8_t socket, uint8_t cmd );
 uint8_t `$INSTANCE_NAME`_SocketOpen( uint16_t port, uint8_t flags );
 cystatus `$INSTANCE_NAME`_SocketClose( uint8_t sock, uint8_t discon );
 cystatus `$INSTANCE_NAME`_SocketDisconnect( uint8_t sock );

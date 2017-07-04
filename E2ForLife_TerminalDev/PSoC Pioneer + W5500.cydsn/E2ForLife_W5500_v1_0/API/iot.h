@@ -1,6 +1,3 @@
-#if !defined( ETH_UTIL_H)
-	#define ETH_UTIL_H
-/* ------------------------------------------------------------------------ */
 /**
  * \addtogroup e2forlife_w5500
  * @{
@@ -38,7 +35,8 @@
  * Header for the IoT Utility functions, defines macros and function
  * prototypes for use of the IoT helpers.
  */
-/* ======================================================================== */
+#ifndef ETH_UTIL_H
+#define ETH_UTIL_H
 	
 #include <cytypes.h>
 	
@@ -50,7 +48,6 @@ void IOT_StringMAC(uint8 *mac, char *macString);
 void IOT_StringIP( uint32 ip, char *ipString );
 int IOT_base64encode(const void* data_buf, int dataLength, char* result, int resultSize);
 int IOT_base64decode (char *in, int inLen, uint8 *out, int *outLen);
-
 
 #endif
 /** @} */

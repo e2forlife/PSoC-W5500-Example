@@ -1,5 +1,5 @@
 /**
- * \addtogroup e2forlife_w5500
+ * @addtogroup e2forlife_w5500
  * @{
  */
 /**
@@ -29,27 +29,28 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * \file util.c
- * \author Chuck Erhardt (chuck@e2forlife.com)
+ * @file util.c
+ * @author Chuck Erhardt (chuck@e2forlife.com)
  * 
  * Changes: Carlos Diaz (carlos.santiago.diaz@gmail.com) 2017
  * Header file for the util functions.
  */
 
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef `$INSTANCE_NAME`_UTIL_H
+#define `$INSTANCE_NAME`_UTIL_H
 
 #include <cyfitter.h>
 #include <cytypes.h> // stdint.h
 
-uint32_t ParseIP( const char* ipString );
-cystatus ParseMAC(const char *macString, uint8_t *mac);
-void StringMAC(uint8_t *mac, char *macString);
-void StringIP( uint32_t ip, char *ipString );
-int Base64Encode(const void* data_buf, int dataLength, char* result, int resultSize);
-int Base64Decode (char *in, int inLen, uint8_t *out, int *outLen);
-uint32_t IPADDRESS( const uint8_t x1, const uint8_t x2, const uint8_t x3, const uint8_t x4 );
+uint32_t `$INSTANCE_NAME`_ParseIP( const char* ipString );
+cystatus `$INSTANCE_NAME`_ParseMAC( const char* macString, uint8_t* mac );
+void `$INSTANCE_NAME`_StringMAC( uint8_t* mac, char* macString );
+void `$INSTANCE_NAME`_StringIP( uint32_t ip, char* ipString );
+int `$INSTANCE_NAME`_Base64Encode( const void* data_buf, int dataLength,
+                                   char* result, int resultSize);
+int `$INSTANCE_NAME`_Base64Decode ( char* in, int inLen, uint8_t* out, int* outLen);
+uint32_t `$INSTANCE_NAME`_IPADDRESS( const uint8_t x1, const uint8_t x2,
+                                     const uint8_t x3, const uint8_t x4 );
 
-#endif // UTIL_H
-
+#endif /* `$INSTANCE_NAME`_UTIL_H */
 /* [] END OF FILE */

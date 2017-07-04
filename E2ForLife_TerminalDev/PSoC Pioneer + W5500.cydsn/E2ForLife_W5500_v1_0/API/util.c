@@ -1,5 +1,5 @@
 /**
- * \addtogroup e2forlife_w5500
+ * @addtogroup e2forlife_w5500
  * @{
  */
 /**
@@ -54,90 +54,97 @@
 #define _DECODE64_INVALID    66
 
 /**
- * \brief Convert an ASCII string to an IP address.
- * \param ipString (char*) buffer containing the IP address to convert.
- * \returns uint32 the converted IP address from teh ASCII-Z string
- * \returns 0xFFFFFFFF Illegal or invalid IP address. Bad Conversion
+ * @brief Convert an ASCII string to an IP address.
  *
  * This function parses the XXX.YYY.ZZZ.AAA IPv4 address in to a register
- * format IP address for use with the MAC hardware.  The adress must be
+ * format IP address for use with the MAC hardware. The adress must be
  * stored as ASCII decimal with period delimiters between the valeus.  Upon
  * sucessful completion a register image of the IP address is returned,
  * otherwise, 0xFFFFFFFF is returned.
+ *
+ * @param ipString (char*) buffer containing the IP address to convert.
+ * @returns uint32 the converted IP address from teh ASCII-Z string
+ * @returns 0xFFFFFFFF Illegal or invalid IP address. Bad Conversion
  */
 uint32_t `$INSTANCE_NAME`_ParseIP( const char* ipString )
 {
-	// Parse a human readable string in to a IP address usable by the hardare
-	char digit[5] = {0};
-	uint8_t ip[4] = {0};
+    // Parse a human readable string in to a IP address usable by the hardare
+    char digit[5] = {0};
+    uint8_t ip[4] = {0};
     uint8_t index = 0;
     uint8_t counter = 0;
     uint8_t dindex = 0;
 	
-	while ( (counter < 4) && ((unsigned int)index < strlen(ipString) ) ) {
-		if ( (ipString[index] >= '0' ) && (ipString[index] <= '9') ) {
-			if (dindex > 3) return( 0xFFFFFFFF );
-			digit[dindex++] = ipString[index];
-			
-		}
+    while ( ( counter < 4 ) && ( (unsigned int)index < strlen( ipString ) ) ) {
+        if ( ( '0' <= ipString[index] ) && ( '9' >= ipString[index] ) ) {
+            if ( dindex > 3 ) {
+                return( 0xFFFFFFFF );
+            }
+                digit[dindex++] = ipString[index];
+        }
 		
-		if ( (ipString[index] == '.') || (ipString[index+1] == 0) ) {
-			digit[dindex] = 0;
-			dindex = 0;
-			// convert the value and store in the buffer
-			ip[counter] = 0;
-            
-			while (digit[dindex] != 0) {
-				ip[counter] = (ip[counter]*10) + (digit[dindex]-'0');
-				++dindex;
-				// ip[counter] = ...
-			}
-			// reset the digit index to start accumulating digits again
-			dindex = 0;
-			// move to the next address byte
-			++counter;
-		}
-		++index;
-	}
-	
-	if ( counter != 4 ) {
-		return 0xFFFFFFFF;
-	} else {
-		return `$INSTANCE_NAME`_IPADDRESS(ip[0], ip[1], ip[2], ip[3]);
-	}
+        if ( ( '.' == ipString[index] ) || ( 0 == ipString[index + 1 ] ) ) {
+                digit[dindex] = 0;
+                dindex = 0;
+                // convert the value and store in the buffer
+                ip[counter] = 0;
+
+                while ( 0 != digit[dindex] ) {
+                        ip[counter] = ( ip[counter] * 10 ) + ( digit[dindex] - '0' );
+                        ++dindex;
+                        // ip[counter] = ...
+                }
+                // reset the digit index to start accumulating digits again
+                dindex = 0;
+                // move to the next address byte
+                ++counter;
+        }
+        ++index;
+    }
+
+    if ( 4 != counter ) {
+        return 0xFFFFFFFF;
+    } else {
+        return `$INSTANCE_NAME`_IPADDRESS( ip[0], ip[1], ip[2], ip[3] );
+    }
 }
 
 /**
- * /brief Parse a MAC Address string in to a 6-byte mac address
- * /param *macString Pointer to the ASCII-Z String containing the MAC address
- * /param *mac Pointer to the 6-byte array to hold the output mac addres
+ * @brief Parse a MAC Address string in to a 6-byte mac address
+ *
+ * A mac address is specified as a string of 6 hex bytes with
+ * colon (':') seperating the bytes. An invalidly formed
+ * address will only process the values up the error and return CYRET_BAD_DATA
+ * otherwise, CYRET_SUCCESS is returned.
+ *
+ * @param *macString Pointer to the ASCII-Z String containing the MAC address
+ * @param *mac Pointer to the 6-byte array to hold the output mac addres
+ *
+ * @return
  */
-cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8_t *mac)
+cystatus `$INSTANCE_NAME`_ParseMAC( const char* macString, uint8_t* mac )
 {
-	/* 
-	 * a mac address is specified as a string of 6 hex bytes with
-	 * colon (':') seperating the bytes.  An invalidly formed
-	 * address will only process the values up the error and return BAD_DATA
-	 * otherwise, SUCESS is returned.
-	 */
+
 	uint16 index = 0;
 	cystatus result = CYRET_SUCCESS;
 
 	for( uint8_t digit = 0;
-        (digit<6) && (result == CYRET_SUCCESS)&&(macString[index] != 0);
-        ++digit) {
+        ( digit < 6) && ( CYRET_SUCCESS == result ) && ( 0 != macString[index] );
+        ++digit ) {
+
 		// process the first nibble
-		if (isxdigit((int)macString[index]) ) {
-			mac[digit] = _HEX2BIN(macString[index]);
+        if ( isxdigit( (int)macString[index] ) ) {
+            mac[digit] = _HEX2BIN( macString[index] );
 			++index;
 			mac[digit] <<= 4;
-			if (isxdigit((int)macString[index])) {
-				mac[digit] += _HEX2BIN(macString[index]);
+
+            if ( isxdigit( (int)macString[index] ) ) {
+                mac[digit] += _HEX2BIN( macString[index] );
 				++index;
 				// now for digits other than digit 5 (the last one) look for
 				// the dash seperator.  If there is no dash, return bad data
-				if (digit<5) {
-					if (macString[index]!=':') {
+                if ( digit < 5 ) {
+                    if ( ':' != macString[index] ) {
 						result = CYRET_BAD_DATA;
 					}
 					++index; // move conversion pointer to the next value
@@ -154,16 +161,19 @@ cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8_t *mac)
 }
 
 /**
- * \brief Convert a device MAC address (HArdware Address) to ASCII
- * \param mac (*uint8) array of bytes holding the MAC address
- * \param macString (*char) pointer to an ASCII-Z string buffer to hold output
+ * @brief Convert a device MAC address (HArdware Address) to ASCII
  *
  * This function takes the passed array of 6 bytes and converts it to an
  * ASCI-Z string containing HEX values and a colon (:) delimiter between bytes
  * of the harware address.  This is a nice fucntion for displaying a MAC
  * address, but otherwise not really required for functionality
+ *
+ * @param mac (*uint8) array of bytes holding the MAC address
+ * @param macString (*char) pointer to an ASCII-Z string buffer to hold output
+ *
+ * @return
  */
-void `$INSTANCE_NAME`_StringMAC(uint8_t *mac, char *macString)
+void `$INSTANCE_NAME`_StringMAC( uint8_t* mac, char* macString )
 {
 	uint8_t index = 0;
 	
@@ -172,8 +182,8 @@ void `$INSTANCE_NAME`_StringMAC(uint8_t *mac, char *macString)
 	// string formater will function properly
 	for( uint8_t digit = 0; digit < 6; ++digit ) {
 		// convert the first nibble
-		macString[index++] = _BIN2HEX((( mac[digit] >> 4) & 0x0F ));
-		macString[index++] = _BIN2HEX(( mac[digit] & 0x0F ));
+        macString[index++] = _BIN2HEX( ( ( mac[digit] >> 4 ) & 0x0F ) );
+        macString[index++] = _BIN2HEX( ( mac[digit] & 0x0F ) );
 		if ( digit < 5 ) {
 			macString[index++] = ':';
 		}
@@ -184,16 +194,19 @@ void `$INSTANCE_NAME`_StringMAC(uint8_t *mac, char *macString)
 }
 
 /**
- * \brief convert an IP address to a ASCII String for printing
- * \param ip (uinit32) Binary form IP Address
- * \param ipString (*char) pointer to character buffer to hold the IP address
+ * @brief convert an IP address to a ASCII String for printing
  *
  * This function takes the 32-bit IP address from the chip registers and
  * converts it to human-readable ASCII suitable for printing or storing in a
  * log file. This is basically just a useful helper function to prevent having
  * to slog through the hex to determine the IP address ehn debugging.
+ *
+ * @param ip (uinit32) Binary form IP Address
+ * @param ipString (*char) pointer to character buffer to hold the IP address
+ *
+ * @return
  */
-void `$INSTANCE_NAME`_StringIP( uint32_t ip, char *ipString )
+void `$INSTANCE_NAME`_StringIP( uint32_t ip, char* ipString )
 {
 	uint8_t *ipBytes = (uint8_t*) &ip;
 	uint8_t index = 0;
@@ -226,22 +239,25 @@ void `$INSTANCE_NAME`_StringIP( uint32_t ip, char *ipString )
 }
 
 /**
- * \brief Encode input data buffer as ASCII Base64 values
- * \param *data_buf input data buffer
- * \param dataLength the number of bytes in the input data buffer
- * \param *result pointer to the array to hold the result string
- * \param resultSize the number of bytes that can be stored in teh result buffer
+ * @brief Encode input data buffer as ASCII Base64 values
  *
  * REF: http://en.wikibooks.org/wiki/Algorithm_Implementation/Miscellaneous/Base64
  * This function will encode a buffer of binary data as an ASCII base64 for transmission
  * over a network packet.
+ *
+ * @param *data_buf input data buffer
+ * @param dataLength the number of bytes in the input data buffer
+ * @param *result pointer to the array to hold the result string
+ * @param resultSize the number of bytes that can be stored in teh result buffer
+ *
+ * @return
  */
-int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* result, int resultSize)
+int `$INSTANCE_NAME`_Base64Encode( const void* data_buf, int dataLength,
+                                   char* result, int resultSize)
 {
     const char base64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     const uint8_t *dat = (const uint8_t *)data_buf;
     int resultIndex = 0;
-    int x = 0;
     int padCount = dataLength % 3;
     uint32_t n = 0;
     uint8_t n0 = 0;
@@ -250,7 +266,7 @@ int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* re
     uint8_t n3 = 0;
  
     // increment over the length of the string, three characters at a time
-    for ( x = 0; x < dataLength; x += 3 ) {
+    for ( int x = 0; x < dataLength; x += 3 ) {
         // these three 8-bit (ASCII) characters become one 24-bit number
         n = dat[x] << 16;
   
@@ -321,15 +337,8 @@ int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* re
 }
 
 /**
- * \brief decode a base64 encoded string in to corrisponding binary data
- * \param *in pointer to the input buffer of base64 encoded data
- * \param inLen the length of data within the input buffer.
- * \param *out pointer to the array to hold the decoded data elements
- * \param *outLen pointer to the maximum & actual output length
- * \retval 0 Result is ok
- * \retval 1 Buffer Overflow
- * \retval 2 Invalid data input
-
+ * @brief decode a base64 encoded string in to corrisponding binary data
+ *
  * REF: http://en.wikibooks.org/wiki/Algorithm_Implementation/Miscellaneous/Base64
  * This function will decode a packet of base64 encoded data and return the binary
  * equalivant data in the out buffer.  When using this function, the outLength is
@@ -337,15 +346,24 @@ int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* re
  * by the function to contain the actual length of the data decoded, thus a passed
  * value of 1024 for the maximum woudl have 35 after calling when 35 bytes were
  * decoded from the input string.
+ *
+ * @param *in pointer to the input buffer of base64 encoded data
+ * @param inLen the length of data within the input buffer.
+ * @param *out pointer to the array to hold the decoded data elements
+ * @param *outLen pointer to the maximum & actual output length
+ *
+ * @retval 0 Result is ok
+ * @retval 1 Buffer Overflow
+ * @retval 2 Invalid data input
  */
-int `$INSTANCE_NAME`_Base64Decode (char *in, int inLen, uint8_t *out, int *outLen)
+int `$INSTANCE_NAME`_Base64Decode( char* in, int inLen, uint8_t* out, int* outLen )
 { 
     char *end = in + inLen;
     int buf = 1;
     int len = 0;
  	uint8_t c;
 	
-    while (in < end) {
+    while ( in < end ) {
 		if ( (*in >= 'A') && (*in <= 'Z') )       { c = (*in) - 'A';	      }
 		else if ( (*in >= 'a') && ( *in <= 'z') ) {	c = (*in) - 'a' + 26;     }
 		else if ( (*in >= '0') && ( *in <= '9') ) { c = (*in) - '0' + 52;     }
@@ -365,9 +383,9 @@ int `$INSTANCE_NAME`_Base64Decode (char *in, int inLen, uint8_t *out, int *outLe
         default:
             buf = buf << 6 | c;
  
-            /* If the buffer is full, split it into bytes */
+            // If the buffer is full, split it into bytes
             if (buf & 0x1000000) {
-                if ((len += 3) > *outLen) return 1; /* buffer overflow */
+                if ((len += 3) > *outLen) return 1; // buffer overflow
                 *out++ = buf >> 16;
                 *out++ = buf >> 8;
                 *out++ = buf;
@@ -377,15 +395,16 @@ int `$INSTANCE_NAME`_Base64Decode (char *in, int inLen, uint8_t *out, int *outLe
     }
  
     if (buf & 0x40000) {
-        if ((len += 2) > *outLen) return 1; /* buffer overflow */
+        if ((len += 2) > *outLen) return 1; // buffer overflow
         *out++ = buf >> 10;
         *out++ = buf >> 2;
     } else if (buf & 0x1000) {
-        if (++len > *outLen) return 1; /* buffer overflow */
+        if (++len > *outLen) return 1; // buffer overflow
         *out++ = buf >> 4;
     }
  
-    *outLen = len; // modify to reflect the actual output size
+    // modify to reflect the actual output size
+    *outLen = len;
     
     return 0;
 }
@@ -432,7 +451,7 @@ uint32_t `$INSTANCE_NAME`_IPADDRESS( const uint8_t x1, const uint8_t x2,
 }
 
 /**
- * undefine the helper macros used to convert to/from ASCII-HEX from/to
+ * Undefine the helper macros used to convert to/from ASCII-HEX from/to
  * binary.  This is done to prevent stepping on someone else's toes who
  * might have used the macro somewhere else.
  */

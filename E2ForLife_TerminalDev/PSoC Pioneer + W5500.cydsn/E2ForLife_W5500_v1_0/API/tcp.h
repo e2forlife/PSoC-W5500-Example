@@ -1,5 +1,5 @@
 /**
- * \addtogroup e2forlife_w5500
+ * @addtogroup e2forlife_w5500
  * @{
  */
 /**
@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * \file tcp.h
- * \author Chuck Erhardt (chuck@e2forlife.com)
+ * @file tcp.h
+ * @author Chuck Erhardt (chuck@e2forlife.com)
  * 
  * Changes: Carlos Diaz (carlos.santiago.diaz@gmail.com) 2017
  * Header file for the tcp functions.
@@ -45,11 +45,11 @@
 
 cystatus `$INSTANCE_NAME`_TcpConnected( uint8_t sock );
 uint8_t `$INSTANCE_NAME`_TcpOpenClient( uint16_t port, uint32_t remote_ip, uint16_t remote_port );
-uint8_t `$INSTANCE_NAME`_TcpOpenServer(uint16_t port);
+uint8_t `$INSTANCE_NAME`_TcpOpenServer( uint16_t port );
 cystatus `$INSTANCE_NAME`_TcpWaitForConnection( uint8_t socket );
-uint16_t `$INSTANCE_NAME`_TcpSend( uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags);
-void `$INSTANCE_NAME`_TcpPrint(uint8_t socket, const char* string );
-uint16_t `$INSTANCE_NAME`_TcpReceive(uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags);
+uint16_t `$INSTANCE_NAME`_TcpSend( uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags );
+void `$INSTANCE_NAME`_TcpPrint( uint8_t socket, const char* string );
+uint16_t `$INSTANCE_NAME`_TcpReceive( uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags );
 char `$INSTANCE_NAME`_TcpGetChar( uint8_t socket );
 int `$INSTANCE_NAME`_TcpGetLine( uint8_t socket, char *buffer );
 

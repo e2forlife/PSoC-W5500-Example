@@ -243,51 +243,23 @@ typedef enum {
 
 #define `$INSTANCE_NAME`_TXRX_FLG_WAIT                      ( 0x01 )
 
-void `$INSTANCE_NAME`_Send(uint16_t offset, uint8_t block_select, uint8_t write, uint8_t *buffer, uint16_t len);
-
-#if 1
-void `$INSTANCE_NAME`_Write(uint16_t offset, uint8_t block_select, uint8_t* data, size_t size);
-void `$INSTANCE_NAME`_WriteSingle(uint16_t offset, uint8_t block_select, uint8_t data);
-void `$INSTANCE_NAME`_Read(uint16_t offset, uint8_t block_select, uint8_t* data, size_t size);
-#endif
+void `$INSTANCE_NAME`_Send( uint16_t offset, uint8_t block_select, uint8_t write, uint8_t* buffer, uint16_t len );
 
 cystatus `$INSTANCE_NAME`_Start( void );
-cystatus `$INSTANCE_NAME`_StartEx( const char *gateway, const char *subnet, const char *mac, const char *ip );
+cystatus `$INSTANCE_NAME`_StartEx( const char* gateway, const char* subnet, const char* mac, const char* ip );
 cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t *mac, uint8_t* ip );
-void `$INSTANCE_NAME`_GetMac(uint8_t* mac);
+void `$INSTANCE_NAME`_GetMac( uint8_t* mac);
 uint32_t `$INSTANCE_NAME`_GetIp( void );
-uint16_t `$INSTANCE_NAME`_GetTxLength(uint8_t socket, uint16_t len, uint8_t flags);
-cystatus `$INSTANCE_NAME`_WriteTxData(uint8_t socket, uint8_t *buffer, uint16_t tx_length, uint8_t flags);
+uint16_t `$INSTANCE_NAME`_GetTxLength( uint8_t socket, uint16_t len, uint8_t flags );
+cystatus `$INSTANCE_NAME`_WriteTxData( uint8_t socket, uint8_t* buffer, uint16_t tx_length, uint8_t flags );
 
 uint16_t `$INSTANCE_NAME`_RxDataReady( uint8_t socket );
 uint16_t `$INSTANCE_NAME`_TxBufferFree( uint8_t socket );
-uint8_t `$INSTANCE_NAME`_SocketOpen( uint16_t port, uint8_t flags );
-cystatus `$INSTANCE_NAME`_SocketClose( uint8_t sock, uint8_t discon );
-cystatus `$INSTANCE_NAME`_SocketDisconnect( uint8_t sock );
-cystatus `$INSTANCE_NAME`_SocketSendComplete( uint8_t socket );
-cystatus `$INSTANCE_NAME`_ExecuteSocketCommand(uint8_t socket, uint8_t cmd );
 
-cystatus `$INSTANCE_NAME`_TcpConnected( uint8_t sock );
-uint8_t `$INSTANCE_NAME`_TcpOpenClient( uint16_t port, uint32_t remote_ip, uint16_t remote_port );
-uint8_t `$INSTANCE_NAME`_TcpOpenServer(uint16_t port);
-cystatus `$INSTANCE_NAME`_TcpWaitForConnection( uint8_t socket );
-uint16_t `$INSTANCE_NAME`_TcpSend( uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags);
-void `$INSTANCE_NAME`_TcpPrint(uint8_t socket, const char *string );
-uint16_t `$INSTANCE_NAME`_TcpReceive(uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags);
-char `$INSTANCE_NAME`_TcpGetChar( uint8_t socket );
-int `$INSTANCE_NAME`_TcpGetLine( uint8_t socket, char *buffer );
-
-uint8_t `$INSTANCE_NAME`_UdpOpen( uint16_t port );
-uint16_t `$INSTANCE_NAME`_UdpSend(uint8_t socket, uint32_t ip, uint16_t port, uint8_t *buffer, uint16_t len, uint8_t flags);
-uint16_t `$INSTANCE_NAME`_UdpReceive(uint8_t socket, uint8_t *header, uint8_t *buffer, uint16_t len, uint8_t flags);
-
-uint32_t `$INSTANCE_NAME`_ParseIP( const char* ipString );
-cystatus `$INSTANCE_NAME`_ParseMAC(const char *macString, uint8_t *mac);
-void `$INSTANCE_NAME`_StringMAC(uint8_t *mac, char *macString);
-void `$INSTANCE_NAME`_StringIP( uint32_t ip, char *ipString );
-int `$INSTANCE_NAME`_Base64Encode(const void* data_buf, int dataLength, char* result, int resultSize);
-int `$INSTANCE_NAME`_Base64Decode (char *in, int inLen, uint8_t *out, int *outLen);
-uint32_t `$INSTANCE_NAME`_IPADDRESS(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4 );
+#if 1
+void `$INSTANCE_NAME`_Write( uint16_t offset, uint8_t block_select, uint8_t* data, size_t size );
+void `$INSTANCE_NAME`_Read( uint16_t offset, uint8_t block_select, uint8_t* data, size_t size );
+#endif
 
 #endif /* `$INSTANCE_NAME`_H */
 /** @} */

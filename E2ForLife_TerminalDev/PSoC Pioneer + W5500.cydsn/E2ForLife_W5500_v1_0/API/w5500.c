@@ -50,6 +50,7 @@
 
 #include "`$INSTANCE_NAME`.h"
 #include "`$INSTANCE_NAME`_util.h"
+#include "`$INSTANCE_NAME`_socket.h"
 
 ///**
 // * constant conversion lookup table to convert socket number
@@ -378,7 +379,7 @@ void `$INSTANCE_NAME`_Reset( void )
 	// register contents for the chip.
 	uint8_t status = 0x80;
     
-#if 0
+#if 1
 	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_MODE,`$INSTANCE_NAME`_BLOCK_COMMON,1, &status, 1);
     // Wait for the mode register to clear the reset bit, thus indicating
 	// that the reset command has been completed.
