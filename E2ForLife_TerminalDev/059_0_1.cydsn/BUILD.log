@@ -1,33 +1,6 @@
---------------- Build Started: 07/03/2017 20:45:08 Project: 059_0_1, Configuration: ARM GCC 5.4-2016-q2-update Debug ---------------
+--------------- Build Started: 07/05/2017 14:24:30 Project: 059_0_1, Configuration: ARM GCC 5.4-2016-q2-update Debug ---------------
 The code generation step is up to date.
-arm-none-eabi-gcc.exe -c Generated_Source\PSoC5\ETH_tcp.c -o .\CortexM3\ARM_GCC_541\Debug\ETH_tcp.o -mcpu=cortex-m3 -mthumb -I. -IGenerated_Source\PSoC5 -Wa,-alh=.\CortexM3\ARM_GCC_541\Debug/ETH_tcp.lst -g -D DEBUG -Wall -ffunction-sections -ffat-lto-objects -O0
-Generated_Source\PSoC5\ETH_tcp.c: In function 'ETH_TcpOpenClient':
-Generated_Source\PSoC5\ETH_tcp.c:103:23: warning: implicit declaration of function 'ETH_SocketOpen' [-Wimplicit-function-declaration]
-     uint8_t socket  = ETH_SocketOpen( port, ETH_PROTO_TCP );
-                       ^
-Generated_Source\PSoC5\ETH_tcp.c:126:31: warning: implicit declaration of function 'ETH_ExecuteSocketCommand' [-Wimplicit-function-declaration]
-         if ( CYRET_SUCCESS == ETH_ExecuteSocketCommand( socket,
-                               ^
-Generated_Source\PSoC5\ETH_tcp.c:142:17: warning: implicit declaration of function 'ETH_SocketClose' [-Wimplicit-function-declaration]
-                 ETH_SocketClose( socket, 0 );
-                 ^
-Generated_Source\PSoC5\ETH_tcp.c: In function 'ETH_TcpSend':
-Generated_Source\PSoC5\ETH_tcp.c:295:26: warning: implicit declaration of function 'ETH_SocketSendComplete' [-Wimplicit-function-declaration]
-                 result = ETH_SocketSendComplete( socket );
-                          ^
-arm-none-eabi-gcc.exe -c Generated_Source\PSoC5\ETH_util.c -o .\CortexM3\ARM_GCC_541\Debug\ETH_util.o -mcpu=cortex-m3 -mthumb -I. -IGenerated_Source\PSoC5 -Wa,-alh=.\CortexM3\ARM_GCC_541\Debug/ETH_util.lst -g -D DEBUG -Wall -ffunction-sections -ffat-lto-objects -O0
 arm-none-eabi-gcc.exe -c Generated_Source\PSoC5\ETH_udp.c -o .\CortexM3\ARM_GCC_541\Debug\ETH_udp.o -mcpu=cortex-m3 -mthumb -I. -IGenerated_Source\PSoC5 -Wa,-alh=.\CortexM3\ARM_GCC_541\Debug/ETH_udp.lst -g -D DEBUG -Wall -ffunction-sections -ffat-lto-objects -O0
-Generated_Source\PSoC5\ETH_udp.c: In function 'ETH_UdpOpen':
-Generated_Source\PSoC5\ETH_udp.c:62:12: warning: implicit declaration of function 'ETH_SocketOpen' [-Wimplicit-function-declaration]
-   socket = ETH_SocketOpen(port, ETH_PROTO_UDP);
-            ^
-Generated_Source\PSoC5\ETH_udp.c:67:5: warning: implicit declaration of function 'ETH_SocketClose' [-Wimplicit-function-declaration]
-     ETH_SocketClose(socket,0);
-     ^
-Generated_Source\PSoC5\ETH_udp.c: In function 'ETH_UdpReceive':
-Generated_Source\PSoC5\ETH_udp.c:154:3: warning: implicit declaration of function 'ETH_ExecuteSocketCommand' [-Wimplicit-function-declaration]
-   ETH_ExecuteSocketCommand( socket, ETH_CR_RECV );
-   ^
 arm-none-eabi-ar.exe -rs .\CortexM3\ARM_GCC_541\Debug\059_0_1.a .\CortexM3\ARM_GCC_541\Debug\ETH_CSN.o .\CortexM3\ARM_GCC_541\Debug\ETH.o .\CortexM3\ARM_GCC_541\Debug\ETH_socket.o .\CortexM3\ARM_GCC_541\Debug\ETH_tcp.o .\CortexM3\ARM_GCC_541\Debug\ETH_util.o .\CortexM3\ARM_GCC_541\Debug\ETH_udp.o .\CortexM3\ARM_GCC_541\Debug\CyDmac.o .\CortexM3\ARM_GCC_541\Debug\CyFlash.o .\CortexM3\ARM_GCC_541\Debug\CyLib.o .\CortexM3\ARM_GCC_541\Debug\cyPm.o .\CortexM3\ARM_GCC_541\Debug\CySpc.o .\CortexM3\ARM_GCC_541\Debug\cyutils.o .\CortexM3\ARM_GCC_541\Debug\SPI.o .\CortexM3\ARM_GCC_541\Debug\SPI_PM.o .\CortexM3\ARM_GCC_541\Debug\SPI_INT.o .\CortexM3\ARM_GCC_541\Debug\SPI_IntClock.o .\CortexM3\ARM_GCC_541\Debug\UART.o .\CortexM3\ARM_GCC_541\Debug\CyBootAsmGnu.o .\CortexM3\ARM_GCC_541\Debug\UART_AsmGnu.o
 arm-none-eabi-ar.exe: creating .\CortexM3\ARM_GCC_541\Debug\059_0_1.a
 arm-none-eabi-gcc.exe -Wl,--start-group -o C:\Users\Xwx47\Documents\Creator\PSoC-W5500-Example\E2ForLife_TerminalDev\059_0_1.cydsn\CortexM3\ARM_GCC_541\Debug\059_0_1.elf .\CortexM3\ARM_GCC_541\Debug\main.o .\CortexM3\ARM_GCC_541\Debug\cyfitter_cfg.o .\CortexM3\ARM_GCC_541\Debug\cymetadata.o .\CortexM3\ARM_GCC_541\Debug\Cm3Start.o .\CortexM3\ARM_GCC_541\Debug\059_0_1.a "C:\Program Files (x86)\Cypress\PSoC Creator\4.1\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CortexM3\ARM_GCC_541\Debug\CyComponentLibrary.a" -mcpu=cortex-m3 -mthumb -L Generated_Source\PSoC5 -Wl,-Map,.\CortexM3\ARM_GCC_541\Debug/059_0_1.map -T Generated_Source\PSoC5\cm3gcc.ld -specs=nano.specs -Wl,--gc-sections -g -ffunction-sections -O0 -ffat-lto-objects -Wl,--end-group
@@ -35,4 +8,4 @@ cyelftool.exe -C C:\Users\Xwx47\Documents\Creator\PSoC-W5500-Example\E2ForLife_T
 cyelftool.exe -S C:\Users\Xwx47\Documents\Creator\PSoC-W5500-Example\E2ForLife_TerminalDev\059_0_1.cydsn\CortexM3\ARM_GCC_541\Debug\059_0_1.elf
 Flash used: 7262 of 262144 bytes (2.8 %).
 SRAM used: 2549 of 65536 bytes (3.9 %). Stack: 2048 bytes. Heap: 128 bytes.
---------------- Build Succeeded: 07/03/2017 20:45:38 ---------------
+--------------- Build Succeeded: 07/05/2017 14:24:36 ---------------

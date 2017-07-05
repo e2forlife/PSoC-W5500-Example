@@ -63,6 +63,7 @@
 // Macros & Function Defines
 
 // W5500 Register Map
+#if 1
 #define `$INSTANCE_NAME`_REG_MODE            ( 0x0000 )
 #define `$INSTANCE_NAME`_REG_GAR             ( 0x0001 )
 #define `$INSTANCE_NAME`_REG_SUBR            ( 0x0005 )
@@ -84,8 +85,34 @@
 #define `$INSTANCE_NAME`_REG_UPORTR          ( 0x002C )
 #define `$INSTANCE_NAME`_REG_PHYCFGR         ( 0x002E )
 #define `$INSTANCE_NAME`_REG_VERSIONR        ( 0x0039 )
+#else
+typedef enum {
+    BASE_MODE = 0x00,
+    BASE_GAR = 0x01,
+    BASE_SUBR = 0x05,
+    BASE_SHAR = 0x09,
+    BASE_SIPR = 0x0F,
+    BASE_INTLEVEL = 0x13,
+    BASE_IR = 0x15,
+    BASE_IMR = 0x16,
+    BASE_SIR = 0x17,
+    BASE_SIMR = 0x18,
+    BASE_RTR = 0x19,
+    BASE_RCR = 0x1B,
+    BASE_PTIMER = 0x1C,
+    BASE_PMAGIC = 0x1D,
+    BASE_PHAR = 0x1E,
+    BASE_PSID = 0x24,
+    BASE_PMRU = 0x26,
+    BASE_UIPR = 0x28,
+    BASE_UPORTR = 0x2C,
+    BASE_PHYCFGR = 0x2E,
+    BASE_VERSIONR = 0x39
+} W5500_BASE_REGISTER;
+#endif
     
 // Socket Registers
+#if 1
 #define `$INSTANCE_NAME`_SREG_MR             ( 0x0000 )
 #define `$INSTANCE_NAME`_SREG_CR             ( 0x0001 )
 #define `$INSTANCE_NAME`_SREG_IR             ( 0x0002 )
@@ -108,6 +135,32 @@
 #define `$INSTANCE_NAME`_SREG_IMR            ( 0x002C )
 #define `$INSTANCE_NAME`_FRAG                ( 0x002D )
 #define `$INSTANCE_NAME`_KPALVTR             ( 0x002F )
+#else
+typedef enum {
+    SOCKET_MR_REG           = 0x00,
+    SOCKET_CR_REG           = 0x01,
+    SOCKET_IR_REG           = 0x02,
+    SOCKET_SR_REG           = 0x03,
+    SOCKET_PORT_REG         = 0x04,
+    SOCKET_DHAR_REG         = 0x06,
+    SOCKET_DIPR_REG         = 0x0C,
+    SOCKET_DPORT_REG        = 0x10,
+    SOCKET_MSSR_REG         = 0x12,
+    SOCKET_TOS_REG          = 0x15,
+    SOCKET_TTL_REG          = 0x16,
+    SOCKET_RXBUF_SIZE_REG   = 0x1E,
+    SOCKET_TXBUF_SIZE_REG   = 0x1F,
+    SOCKET_TX_FSR_REG       = 0x20,
+    SOCKET_TX_RD_REG        = 0x22,
+    SOCKET_TX_WR_REG        = 0x24,
+    SOCKET_RX_RSR_REG       = 0x26,
+    SOCKET_RX_RD_REG        = 0x28,
+    SOCKET_RX_WR_REG        = 0x2A,
+    SOCKET_IMR_REG          = 0x2C,
+    SOCKET_FRAG_REG         = 0x2D,
+    SOCKET_KPALVTR_REG      = 0x2F
+} W5500_SOCKET_REGISTER;
+#endif
     
 // W5500 Commands
 #define `$INSTANCE_NAME`_CR_OPEN            ( 0x01 )
@@ -192,6 +245,9 @@
 
 void `$INSTANCE_NAME`_Send( uint16_t offset, uint8_t block_select, uint8_t write, uint8_t* buffer, uint16_t len );
 
+void `$INSTANCE_NAME`_Write( uint16_t offset, uint8_t block_select, uint8_t* data, size_t size );
+void `$INSTANCE_NAME`_Read( uint16_t offset, uint8_t block_select, uint8_t* data, size_t size );
+
 cystatus `$INSTANCE_NAME`_Start( void );
 cystatus `$INSTANCE_NAME`_StartEx( const char* gateway, const char* subnet, const char* mac, const char* ip );
 cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t *mac, uint8_t* ip );
@@ -202,6 +258,9 @@ cystatus `$INSTANCE_NAME`_WriteTxData( uint8_t socket, uint8_t* buffer, uint16_t
 
 uint16_t `$INSTANCE_NAME`_RxDataReady( uint8_t socket );
 uint16_t `$INSTANCE_NAME`_TxBufferFree( uint8_t socket );
+
+void `$INSTANCE_NAME`_Write( uint16_t offset, uint8_t block_select, uint8_t* data, size_t size );
+void `$INSTANCE_NAME`_Read( uint16_t offset, uint8_t block_select, uint8_t* data, size_t size );
 
 #endif /* `$INSTANCE_NAME`_H */
 /** @} */

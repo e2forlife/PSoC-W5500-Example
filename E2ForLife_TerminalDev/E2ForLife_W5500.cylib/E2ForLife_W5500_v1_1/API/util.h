@@ -29,29 +29,28 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * @file tcp.h
+ * @file util.c
  * @author Chuck Erhardt (chuck@e2forlife.com)
  * 
  * Changes: Carlos Diaz (carlos.santiago.diaz@gmail.com) 2017
- * Header file for the tcp functions.
+ * Header file for the util functions.
  */
 
-#ifndef `$INSTANCE_NAME`_TCP_H
-#define `$INSTANCE_NAME`_TCP_H
+#ifndef `$INSTANCE_NAME`_UTIL_H
+#define `$INSTANCE_NAME`_UTIL_H
 
 #include <cyfitter.h>
-#include <cytypes.h>
-#include <CyLib.h>
+#include <cytypes.h> // stdint.h
 
-cystatus `$INSTANCE_NAME`_TcpConnected( uint8_t socket );
-uint8_t `$INSTANCE_NAME`_TcpOpenClient( uint16_t port, uint32_t remote_ip, uint16_t remote_port );
-uint8_t `$INSTANCE_NAME`_TcpOpenServer( uint16_t port );
-cystatus `$INSTANCE_NAME`_TcpWaitForConnection( uint8_t socket );
-uint16_t `$INSTANCE_NAME`_TcpSend( uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags );
-void `$INSTANCE_NAME`_TcpPrint( uint8_t socket, const char* string );
-uint16_t `$INSTANCE_NAME`_TcpReceive( uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags );
-char `$INSTANCE_NAME`_TcpGetChar( uint8_t socket );
-int `$INSTANCE_NAME`_TcpGetLine( uint8_t socket, char *buffer );
+uint32_t `$INSTANCE_NAME`_ParseIP( const char* ipString );
+cystatus `$INSTANCE_NAME`_ParseMAC( const char* macString, uint8_t* mac );
+void `$INSTANCE_NAME`_StringMAC( uint8_t* mac, char* macString );
+void `$INSTANCE_NAME`_StringIP( uint32_t ip, char* ipString );
+int `$INSTANCE_NAME`_Base64Encode( const void* data_buf, int dataLength,
+                                   char* result, int resultSize);
+int `$INSTANCE_NAME`_Base64Decode ( char* in, int inLen, uint8_t* out, int* outLen);
+uint32_t `$INSTANCE_NAME`_IPADDRESS( const uint8_t x1, const uint8_t x2,
+                                     const uint8_t x3, const uint8_t x4 );
 
-#endif /* `$INSTANCE_NAME`_TCP_H */
+#endif /* `$INSTANCE_NAME`_UTIL_H */
 /* [] END OF FILE */
