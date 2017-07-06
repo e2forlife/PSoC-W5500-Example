@@ -35,11 +35,12 @@ int main()
     
     while (1) {
 
-        socket = ETH_TcpOpenServer( 8080 );
+        socket = ETH_TcpOpenServer( 80 );
         if ( 0xFF == socket) {
             UART_PutString("Socket not openned.\r\n");
         } else {
             UART_PutString("Socket openned.\r\n");
+        }
             UART_PutString("Waiting for connection.\r\n");
             tcp_connection = ETH_TcpWaitForConnection( socket );
             if ( CYRET_SUCCESS == tcp_connection ) {
@@ -56,7 +57,6 @@ int main()
             } else { // CYRET_SUCCESS
                 UART_PutString("Socket closed.\r\n");
             }
-        }
         
         CyDelay(2000);
     }

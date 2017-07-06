@@ -65,23 +65,20 @@ cystatus `$INSTANCE_NAME`_TcpConnected( uint8_t socket )
     if ( `$INSTANCE_NAME`_SOCKET_BAD(socket) ) {
         return CYRET_BAD_PARAM;
     }
-	
-    `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_SR,
+    `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_SR,
                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                           0, &status, 1 );
-    
+                           &status, 1 );
     if ( `$INSTANCE_NAME`_SR_ESTABLISHED == status ) {
         return CYRET_SUCCESS;
     } else {
-        `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_IR,
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_IR,
                                `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                               0, &status, 1 );
-
+                               &status, 1 );
         if ( 0 != ( status & `$INSTANCE_NAME`_IR_TIMEOUT ) ) {
             status = 0xFF;
-            `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_IR,
-                                   `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                                   1, &status, 1);
+            `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_IR,
+                                    `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                                    &status, 1);
             return CYRET_TIMEOUT;
         }
     }
@@ -127,10 +124,9 @@ uint8_t `$INSTANCE_NAME`_TcpOpenClient( uint16_t port, uint32_t remote_ip,
 
         // Blast out the configuration record all at once to set up the IP and
         // port for the remote connection.
-        `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_DIPR,
-                               `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                               1, &rCfg[0], 6 );
-
+        `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_DIPR,
+                                `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                                &rCfg[0], 6 );
         // Execute the connection to the remote server and check for errors
         if ( CYRET_SUCCESS == `$INSTANCE_NAME`_ExecuteSocketCommand( socket,
                                                                      `$INSTANCE_NAME`_CR_CONNECT ) ) {
@@ -139,10 +135,9 @@ uint8_t `$INSTANCE_NAME`_TcpOpenClient( uint16_t port, uint32_t remote_ip,
                 do {
                     CyDelay(1);
                     ++timeout;
-                    `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_IR,
+                    `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_IR,
                                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                                           0, &ir, 1 );
-                        
+                                           &ir, 1 );
                     if ( 0 != ( ir & 0x08 ) ) {
                             // internal chip timeout occured
                             timeout = 3000;
@@ -185,10 +180,9 @@ uint8_t `$INSTANCE_NAME`_TcpOpenServer( uint16_t port )
     if ( `$INSTANCE_NAME`_SOCKET_BAD(socket) ) {
         return 0xFF;
     }
-	
-    `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_SR,
+    `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_SR,
                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                           0, &status, 1 );
+                           &status, 1 );
 
     if ( `$INSTANCE_NAME`_SR_INIT != status ) {
         `$INSTANCE_NAME`_SocketClose( socket, 0 ); // Error opening socket
@@ -229,9 +223,9 @@ cystatus `$INSTANCE_NAME`_TcpWaitForConnection( uint8_t socket )
     // or a timeout on the connection delay to occur.
     do {
         CyDelay(10);
-        `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_SR,
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_SR,
                                `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                               0, &status, 1 );
+                               &status, 1 );
     } while ( `$INSTANCE_NAME`_SR_LISTEN == status );
 		
     return CYRET_SUCCESS;
@@ -272,9 +266,9 @@ uint16_t `$INSTANCE_NAME`_TcpSend( uint8_t socket, uint8_t* buffer,
         // this to block until there was free space. So, check the memory
         // size to determine if the tx buffer is big enough to handle the
         // data block without fragmentation.
-        `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_TXBUF_SIZE,
+        `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_TXBUF_SIZE,
                                `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                               0, &buf_size, 1);
+                               &buf_size, 1);
         max_packet = ( buf_size == 0 ) ? 0 : ( 0x400 << ( buf_size - 1 ) );
         
         // now that we know the max buffer size, if it is smaller than the
@@ -295,18 +289,17 @@ uint16_t `$INSTANCE_NAME`_TcpSend( uint8_t socket, uint8_t* buffer,
     // copied in to the W5500 buffer memory.
     // First read the pointer, then write data from the pointer forward,
     // lastly update the pointer and issue the SEND command.
-    `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_TX_WR,
+    `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_TX_WR,
                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                           0, (uint8*)&ptr, 2 );
+                           (uint8*)&ptr, 2 );
     ptr = CYSWAP_ENDIAN16( ptr );
-    `$INSTANCE_NAME`_Send( ptr, `$INSTANCE_NAME`_TX_BASE(socket),
-                           1, buffer, tx_length);
+    `$INSTANCE_NAME`_Write( ptr, `$INSTANCE_NAME`_TX_BASE(socket),
+                            buffer, tx_length);
     ptr += tx_length;
     ptr = CYSWAP_ENDIAN16( ptr );
-    `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_TX_WR,
-                           `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                           1, (uint8*)&ptr, 2 );
-	
+    `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_TX_WR,
+                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                            (uint8*)&ptr, 2 );
     `$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_SEND );
 	
     if ( 0 != ( flags & `$INSTANCE_NAME`_TXRX_FLG_WAIT ) ) {
@@ -373,21 +366,20 @@ uint16_t `$INSTANCE_NAME`_TcpReceive( uint8_t socket, uint8_t* buffer,
         // and the requested length of data.
         bytes = ( rx_size > len ) ? len : rx_size;
         // Read the starting memory pointer address, and endian correct
-        `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_RX_RD,
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_RX_RD,
                                `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                               0, (uint8*)&ptr, 2 );
+                               (uint8*)&ptr, 2 );
         ptr = CYSWAP_ENDIAN16( ptr );
         // Retrieve the data bytes from the W5500 buffer
-        `$INSTANCE_NAME`_Send( ptr, `$INSTANCE_NAME`_RX_BASE(socket),
-                               0, buffer, bytes);
-
+        `$INSTANCE_NAME`_Read( ptr, `$INSTANCE_NAME`_RX_BASE(socket),
+                               buffer, bytes);
         // Calculate the new buffer pointer location, endian correct, and
         // update the pointer register within the W5500 socket registers
         ptr += bytes;
         ptr = CYSWAP_ENDIAN16( ptr );
-        `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_RX_RD,
-                               `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                               1, (uint8*)&ptr, 2 );
+        `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_RX_RD,
+                                `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                                (uint8*)&ptr, 2 );
         // when all of the available data was read from the message, execute the receive command
         `$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_RECV );
     }

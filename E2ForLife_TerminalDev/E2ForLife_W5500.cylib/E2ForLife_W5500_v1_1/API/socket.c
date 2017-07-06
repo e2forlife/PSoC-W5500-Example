@@ -67,14 +67,13 @@ cystatus `$INSTANCE_NAME`_ExecuteSocketCommand( uint8_t socket, uint8_t cmd )
         return CYRET_BAD_PARAM;
     }
 	
-    `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_CR,
-                           `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                           1, &cmd, 1 );
-	
+    `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_CR,
+                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                            &cmd, 1 );
 	do {
-        `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_CR,
-                               `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                               0, &result, 1 );
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_CR,
+                                `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                                &result, 1 );
         if ( 0 != result ) {
 			CyDelay(1);
 			++timeout;
@@ -142,17 +141,14 @@ uint8_t `$INSTANCE_NAME`_SocketOpen( uint16_t port, uint8_t flags )
 	// Now that the socket is identified, declare it as open, then set the mode
 	// register and issue the socket open command
 	`$INSTANCE_NAME`_socketStatus[socket] = `$INSTANCE_NAME`_SOCKET_OPEN;
-    `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_MR,
-                           `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                           1, &flags, 1 );
-	
+    `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_MR,
+                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                            &flags, 1 );
     // Initialize memory pointers for the W5500 device
 	port = CYSWAP_ENDIAN16(port);
-    
-    `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_PORT,
-                           `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                           1, (uint8*)&port, 2 );
-    
+    `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_PORT,
+                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                            (uint8_t*)&port, 2 );
 	// execute the open command, and check the result.  If the result
 	// was not 0, there was an error in the command, so set the socket
 	// as available, and return 0xFF error socket to safely exit the error
@@ -161,17 +157,7 @@ uint8_t `$INSTANCE_NAME`_SocketOpen( uint16_t port, uint8_t flags )
 		`$INSTANCE_NAME`_socketStatus[socket] = `$INSTANCE_NAME`_SOCKET_AVAILABLE;
 		socket = 0xFF;
 	}
-	
-#if 0
-//	sz = `$INSTANCE_NAME`_RxDataReady(socket);
-//	if (sz > 0) {
-//		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_RX_RD,`$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&ptr,2);
-//		ptr += sz;
-//		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_RX_RD,`$INSTANCE_NAME`_SOCKET_BASE(socket),1,(uint8*)&ptr,2);
-//		`$INSTANCE_NAME`_ExecuteSocketCommand(`$INSTANCE_NAME`_CR_RECV, socket);
-//	}
-#endif
-    
+	    
 	return socket;
 }
 
@@ -205,10 +191,9 @@ cystatus `$INSTANCE_NAME`_SocketClose( uint8_t socket, uint8_t discon )
 	
 	// first read the status of the socket from the W5500, and return with an
 	// error code if the socket is already closed.
-    `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_SR,
+    `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_SR,
                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                           0, &ir, 1);
-    
+                            &ir, 1 );
 	if ( `$INSTANCE_NAME`_SR_CLOSED == ir ) {
         `$INSTANCE_NAME`_socketStatus[socket] = `$INSTANCE_NAME`_SOCKET_AVAILABLE;
 		return CYRET_CANCELED;
@@ -227,10 +212,9 @@ cystatus `$INSTANCE_NAME`_SocketClose( uint8_t socket, uint8_t discon )
 	}
     
 	// clear pending socket interrupts
-    `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_IR,
-                           `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                           1, &ir, 1 );
-	
+    `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_IR,
+                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                            &ir, 1 );
 	return status;
 }
 
@@ -270,17 +254,16 @@ cystatus `$INSTANCE_NAME`_SocketSendComplete( uint8_t socket )
     }
 
 	// Read the Socket IR and check the flags for a send OK
-    `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_IR,
+    `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_IR,
                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                           0, &ir, 1 );
-    
+                           &ir, 1 );
+
 	if ( 0 == ( ir & `$INSTANCE_NAME`_IR_SEND_OK ) ) {
         // The Send was not complete,
         // so now read the status to determine if the socket was closed remotely.
-        `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_SR,
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_SR,
                                `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                               0, &ir, 1 );
-        
+                               &ir, 1 );
         if ( `$INSTANCE_NAME`_SR_CLOSED == ir ) {
 			`$INSTANCE_NAME`_SocketClose( socket, 1 );
 			result = CYRET_CANCELED;

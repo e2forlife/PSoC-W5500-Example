@@ -63,7 +63,9 @@ uint8_t `$INSTANCE_NAME`_UdpOpen( uint16_t port )
 		socket = `$INSTANCE_NAME`_SocketOpen(port, `$INSTANCE_NAME`_PROTO_UDP);
 	
 		if (socket < `$INSTANCE_NAME`_MAX_SOCKETS) {
-			`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_SR, `$INSTANCE_NAME`_SOCKET_BASE(socket), 0, &status, 1);
+            `$INSTANCE_NAME`_Read(`$INSTANCE_NAME`_SREG_SR,
+                                  `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                                  &status, 1);
 			if (status != `$INSTANCE_NAME`_SR_UDP) {
 				`$INSTANCE_NAME`_SocketClose(socket,0);
 				socket = 0xFF;
@@ -95,8 +97,12 @@ uint16_t `$INSTANCE_NAME`_UdpSend( uint8_t socket, uint32_t ip, uint16_t port,
 	port = CYSWAP_ENDIAN16(port); // fix endian-ness
     
 	// setup destination information
-	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_DIPR,`$INSTANCE_NAME`_SOCKET_BASE(socket),1,(uint8*)&ip,4);
-	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_DPORT, `$INSTANCE_NAME`_SOCKET_BASE(socket),1,(uint8*)&port,2);
+    `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_DIPR,
+                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                            (uint8*)&ip, 4 );
+    `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_DPORT,
+                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                            (uint8*)&port, 2 );
 	`$INSTANCE_NAME`_WriteTxData(socket, buffer, tx_length, flags);
 	
 	return tx_length;
@@ -133,10 +139,12 @@ uint16_t `$INSTANCE_NAME`_UdpReceive( uint8_t socket, uint8_t *header,
 		// and the requested length of data.
 		bytes = ( rx_size > len ) ? len : rx_size;
 		// Read the starting memory pointer address, and endian correct
-		`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_RX_RD, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&ptr,2);
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_RX_RD,
+                               `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                               (uint8*)&ptr, 2 );
 		ptr = CYSWAP_ENDIAN16( ptr );
 		// Read the UDP header block from the memory
-		`$INSTANCE_NAME`_Send( ptr,`$INSTANCE_NAME`_RX_BASE(socket),0,header,8);
+        `$INSTANCE_NAME`_Read( ptr,`$INSTANCE_NAME`_RX_BASE(socket), header, 8);
 		ptr += 8;
 		// read the number of bytes to read from the UDP header
 		bytes = header[6];
@@ -144,12 +152,14 @@ uint16_t `$INSTANCE_NAME`_UdpReceive( uint8_t socket, uint8_t *header,
 		
 		// Retrieve the length of data from the received UDP packet, starting
 		// right after the end of the packet header.
-		`$INSTANCE_NAME`_Send( ptr, `$INSTANCE_NAME`_RX_BASE(socket),0,buffer,bytes);
+        `$INSTANCE_NAME`_Read( ptr, `$INSTANCE_NAME`_RX_BASE(socket), buffer, bytes);
 		// Calculate the new buffer pointer location, endian correct, and
 		// update the pointer register within the W5500 socket registers
 		ptr += bytes;
 		ptr = CYSWAP_ENDIAN16( ptr );
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_RX_RD, `$INSTANCE_NAME`_SOCKET_BASE(socket),1,(uint8*)&ptr,2);
+        `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_RX_RD,
+                                `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                                (uint8*)&ptr, 2 );
 		// when all of the available data was read from the message, execute
 		// the receive command
 		`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_RECV );
@@ -159,13 +169,9 @@ uint16_t `$INSTANCE_NAME`_UdpReceive( uint8_t socket, uint8_t *header,
 	return bytes;
 }
 
-/**
- * @todo Open Multi-cast socket
- */
+/** @todo Open Multi-cast socket */
 
-/**
- * @todo Send Multi-cast data
- */
+/** @todo Send Multi-cast data */
 
 /** @} */
 /* [] END OF FILE */

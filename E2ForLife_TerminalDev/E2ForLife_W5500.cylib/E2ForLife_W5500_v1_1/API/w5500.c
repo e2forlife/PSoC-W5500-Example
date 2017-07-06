@@ -235,9 +235,13 @@ uint16_t `$INSTANCE_NAME`_RxDataReady( uint8_t socket )
     }
 
 	do {
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_RX_RSR, `$INSTANCE_NAME`_SOCKET_BASE(socket), 0, (uint8*) &first, 2);
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_RX_RSR,
+                               `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                               (uint8*) &first, 2 );
 		if ( 0 != first ) {
-			`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_RX_RSR, `$INSTANCE_NAME`_SOCKET_BASE(socket), 0,(uint8*) &second, 2);
+            `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_RX_RSR,
+                                   `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                                   (uint8*) &second, 2 );
 		}
 	} while (first != second );
 	
@@ -262,9 +266,13 @@ uint16_t `$INSTANCE_NAME`_TxBufferFree( uint8_t socket )
     }
 
 	do {
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_TX_FSR, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&first,2);
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_TX_FSR,
+                               `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                               (uint8*)&first, 2 );
 		if ( 0 != first ) {
-			`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_TX_FSR, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&second,2);
+            `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_TX_FSR,
+                                   `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                                   (uint8*)&second, 2 );
 		}
 	} while ( first != second );
 	
@@ -284,21 +292,17 @@ void `$INSTANCE_NAME`_Reset( void )
 	// register contents for the chip.
 	uint8_t status = 0x80;
     
-#if 1
-	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_MODE,`$INSTANCE_NAME`_BLOCK_COMMON,1, &status, 1);
+    `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_REG_MODE,
+                            `$INSTANCE_NAME`_BLOCK_COMMON,
+                            &status, 1 );
     // Wait for the mode register to clear the reset bit, thus indicating
-	// that the reset command has been completed.
-	do {
-		`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_REG_MODE, `$INSTANCE_NAME`_BLOCK_COMMON, 0, &status, 1);
-	}
-	while ( (status & 0x80) != 0 );
-#else
-	`$INSTANCE_NAME`_WriteSingle(`$INSTANCE_NAME`_REG_MODE, `$INSTANCE_NAME`_BLOCK_COMMON, status);
-    // Wait for the mode register to clear the reset bit, thus indicating that the reset command has been completed.
+    // that the reset command has been completed.
     do {
-        `$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_REG_MODE, `$INSTANCE_NAME`_BLOCK_COMMON, 0, &status, 1);
-    } while ( 0 != ( status & 0x80 ) );
-#endif
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_REG_MODE,
+                               `$INSTANCE_NAME`_BLOCK_COMMON,
+                               &status, 1);
+    }
+    while ( (status & 0x80) != 0 );
 }
 
 /**
@@ -324,12 +328,14 @@ cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t* mac,
 	for ( socket = 0; socket < 8; ++socket ) {
 		`$INSTANCE_NAME`_socketStatus[socket] = `$INSTANCE_NAME`_SOCKET_AVAILABLE;
 		// Send socket register setup to the chip
-		`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_RXBUF_SIZE, `$INSTANCE_NAME`_SOCKET_BASE(socket), 1, &socket_cfg[0], 14);
+        `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_RXBUF_SIZE,
+                                `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                                &socket_cfg[0], 14 );
 	}
 	
 	if ( NULL != gateway ) {
-		`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_REG_GAR, `$INSTANCE_NAME`_BLOCK_COMMON, 1, gateway, 4);
-		`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_REG_GAR, `$INSTANCE_NAME`_BLOCK_COMMON, 0, config, 4 );
+        `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_REG_GAR, `$INSTANCE_NAME`_BLOCK_COMMON, gateway, 4);
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_REG_GAR, `$INSTANCE_NAME`_BLOCK_COMMON, config, 4 );
 		for ( socket = 0; (socket < 4) && ( gateway[socket] == config[socket] ); ++socket );
 		if (socket < 4) {
             return CYRET_BAD_DATA;
@@ -337,8 +343,8 @@ cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t* mac,
 	}
 	
 	if ( NULL != subnet ) {
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SUBR, `$INSTANCE_NAME`_BLOCK_COMMON, 1, subnet, 4);
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SUBR, `$INSTANCE_NAME`_BLOCK_COMMON, 0, config, 4);
+        `$INSTANCE_NAME`_Write(`$INSTANCE_NAME`_REG_SUBR, `$INSTANCE_NAME`_BLOCK_COMMON, subnet, 4);
+        `$INSTANCE_NAME`_Read(`$INSTANCE_NAME`_REG_SUBR, `$INSTANCE_NAME`_BLOCK_COMMON, config, 4);
 		for ( socket = 0; (socket < 4) && ( subnet[socket] == config[socket] ); ++socket );
 		if ( socket < 4 ) {
             return CYRET_BAD_DATA;
@@ -346,8 +352,8 @@ cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t* mac,
 	}		
 
 	if ( NULL != mac ) {
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, 1, mac, 6);
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, 0, config, 6);
+        `$INSTANCE_NAME`_Write(`$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, mac, 6);
+        `$INSTANCE_NAME`_Read(`$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, config, 6);
 		for ( socket = 0; (socket < 6) && ( mac[socket] == config[socket] ); ++socket);
 		if ( socket < 6 ) {
             return CYRET_BAD_DATA;
@@ -355,8 +361,8 @@ cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t* mac,
 	}		
 
 	if ( NULL != ip ) {
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, 1, ip, 4);
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, 0, config, 4);
+        `$INSTANCE_NAME`_Write(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, ip, 4);
+        `$INSTANCE_NAME`_Read(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, config, 4);
 		for ( socket = 0; (socket < 4) && ( ip[socket] == config[socket] ); ++socket );
 		if ( socket < 4 ) {
             return CYRET_BAD_DATA;
@@ -475,7 +481,7 @@ cystatus `$INSTANCE_NAME`_StartEx( const char *gateway, const char *subnet, cons
  */
 void `$INSTANCE_NAME`_GetMac( uint8_t* mac )
 {
-	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, 0, mac, 6);
+    `$INSTANCE_NAME`_Read(`$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, mac, 6);
 }
 
 /**
@@ -490,7 +496,7 @@ void `$INSTANCE_NAME`_GetMac( uint8_t* mac )
 uint32_t `$INSTANCE_NAME`_GetIp( void )
 {
 	uint32 ipr = 0;
-	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, 0, (uint8*) &ipr, 4);
+    `$INSTANCE_NAME`_Read(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, (uint8*) &ipr, 4);
 	return ipr;
 }
 
@@ -523,7 +529,7 @@ uint16_t `$INSTANCE_NAME`_GetTxLength( uint8_t socket, uint16_t len, uint8_t fla
 		// this to block until there was free space. So, check the memory
 		// size to determine if the tx buffer is big enough to handle the
 		// data block without fragmentation.
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_TXBUF_SIZE, `$INSTANCE_NAME`_SOCKET_BASE( socket ), 0, &buf_size, 1);
+        `$INSTANCE_NAME`_Read(`$INSTANCE_NAME`_SREG_TXBUF_SIZE, `$INSTANCE_NAME`_SOCKET_BASE( socket ), &buf_size, 1);
 		max_packet = ( buf_size == 0 ) ? 0 : ( 0x400 << ( buf_size - 1 ) );
 		
 		// now that we know the max buffer size, if it is smaller than the
@@ -565,12 +571,12 @@ cystatus `$INSTANCE_NAME`_WriteTxData( uint8_t socket, uint8_t *buffer,
     // copied in to the W5500 buffer memory.
 	// First read the pointer, then write data from the pointer forward,
     // lastly update the pointer and issue the SEND command.
-	`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE( socket ), 0, (uint8*) &ptr, 2 );
+    `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE( socket ), (uint8*) &ptr, 2 );
     ptr = CYSWAP_ENDIAN16( ptr );
-	`$INSTANCE_NAME`_Send( ptr, `$INSTANCE_NAME`_TX_BASE( socket ), 1, buffer , tx_length );
+    `$INSTANCE_NAME`_Write( ptr, `$INSTANCE_NAME`_TX_BASE( socket ), buffer , tx_length );
 	ptr += tx_length;
 	ptr = CYSWAP_ENDIAN16( ptr );
-	`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE( socket ), 1, (uint8*) &ptr, 2 );
+    `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE( socket ), (uint8*) &ptr, 2 );
 	
 	`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_SEND );
 	result = `$INSTANCE_NAME`_SocketSendComplete( socket );
