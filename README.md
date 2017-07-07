@@ -6,10 +6,10 @@ Ethernet controller from WizNet, controlled via SPI in mode 0 and 3 (this compon
 
 # TODO for version 1.1:
 
--[ ] Multi-cast, as pointed out in the udp.c file.
--[ ] Update to C99.
--[x] Split x_Send function in x_Read and x_Write functions.
--[ ] Enums instead of defines.
--[x] Header file for each source file.
--[ ] Update Doxygen documentation.
--[x] Start the SPI component and set /CSN pin high in x_Start function.
+- [ ] Multi-cast, as pointed out in the udp.c file.
+- [ ] Update to C99.
+- [x] Split x_Send function in x_Read and x_Write functions.
+- [ ] Enums instead of defines.
+- [x] Header file for each source file.
+- [ ] Update Doxygen documentation.
+- [x] Start the SPI component and set /CSN pin high in x_Start function.

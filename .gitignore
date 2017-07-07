@@ -6,6 +6,10 @@ Backup/*
 Archive/
 Backup/
 
+#Ignore test projects
+059_DisplaySW/*
+059_0_1/*
+
 #Projects optional files
 *.cydsn/codegentemp/
 *.cydsn/Generated_Source/
