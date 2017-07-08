@@ -7,8 +7,8 @@ Archive/
 Backup/
 
 #Ignore test projects
-E2ForLife_TerminalDev/059_DisplaySW/*
-E2ForLife_TerminalDev/059_0_1/*
+E2ForLife_TerminalDev/059_DisplaySW.cydsn/*
+E2ForLife_TerminalDev/059_0_1.cydsn/*
 
 #Projects optional files
 *.cydsn/codegentemp/
