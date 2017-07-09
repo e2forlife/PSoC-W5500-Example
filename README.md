@@ -6,6 +6,7 @@ Ethernet controller from WizNet, controlled via SPI in mode 0 and 3 (this compon
 
 # TODO for version 1.1:
 
+- [ ] Version 1.0 of the component only supported VLD SPI transactions, add suport for FLD transactions and add an option on the customizer to choose one.
 - [ ] Multi-cast, as pointed out in the udp.c file.
 - [ ] Update to C99.
 - [x] Split x_Send function in x_Read and x_Write functions.

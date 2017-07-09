@@ -65,17 +65,21 @@ cystatus `$INSTANCE_NAME`_TcpConnected( uint8_t socket )
     if ( `$INSTANCE_NAME`_SOCKET_BAD(socket) ) {
         return CYRET_BAD_PARAM;
     }
+    
     `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_SR,
                            `$INSTANCE_NAME`_SOCKET_BASE(socket),
                            &status, 1 );
+    
     if ( `$INSTANCE_NAME`_SR_ESTABLISHED == status ) {
         return CYRET_SUCCESS;
     } else {
         `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_IR,
                                `$INSTANCE_NAME`_SOCKET_BASE(socket),
                                &status, 1 );
+        
         if ( 0 != ( status & `$INSTANCE_NAME`_IR_TIMEOUT ) ) {
             status = 0xFF;
+            
             `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_IR,
                                     `$INSTANCE_NAME`_SOCKET_BASE(socket),
                                     &status, 1);
@@ -126,7 +130,8 @@ uint8_t `$INSTANCE_NAME`_TcpOpenClient( uint16_t port, uint32_t remote_ip,
         // port for the remote connection.
         `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_DIPR,
                                 `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                                &rCfg[0], 6 );
+                                rCfg, SIZEOF_ARRAY(rCfg) );
+        
         // Execute the connection to the remote server and check for errors
         if ( CYRET_SUCCESS == `$INSTANCE_NAME`_ExecuteSocketCommand( socket,
                                                                      `$INSTANCE_NAME`_CR_CONNECT ) ) {
@@ -426,9 +431,10 @@ int `$INSTANCE_NAME`_TcpGetLine( uint8_t socket, char *buffer )
                     buffer[idx] = 0;
                     idx = ( idx == 0 ) ? 0 : idx - 1;
                 } else {
+#if 0
                     buffer[idx++] = ch;
                     buffer[idx] = 0;
-#if 0
+#else
                     buffer[idx] = ch;
                     idx++;
                     buffer[idx] = 0;

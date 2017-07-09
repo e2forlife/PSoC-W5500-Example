@@ -320,8 +320,7 @@ void `$INSTANCE_NAME`_Reset( void )
 cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t* mac, uint8_t *ip )
 {
     uint8_t socket = 0;
-	//int socket = 0;
-	uint8_t socket_cfg[14] = { `$INSTANCE_NAME`_SOCKET_MEM, `$INSTANCE_NAME`_SOCKET_MEM, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	uint8_t socket_cfg[14] = { `$INSTANCE_NAME`_SOCKET_MEM, `$INSTANCE_NAME`_SOCKET_MEM, 0x80 };
 	uint8_t config[18] = {0};
 
 	// build chip initialization from the default strings set in the configuration dialog
@@ -330,7 +329,7 @@ cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t* mac,
 		// Send socket register setup to the chip
         `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_RXBUF_SIZE,
                                 `$INSTANCE_NAME`_SOCKET_BASE(socket),
-                                &socket_cfg[0], 14 );
+                                socket_cfg, SIZEOF_ARRAY(socket_cfg) );
 	}
 	
 	if ( NULL != gateway ) {
@@ -481,7 +480,7 @@ cystatus `$INSTANCE_NAME`_StartEx( const char *gateway, const char *subnet, cons
  */
 void `$INSTANCE_NAME`_GetMac( uint8_t* mac )
 {
-    `$INSTANCE_NAME`_Read(`$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, mac, 6);
+    `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, mac, 6 );
 }
 
 /**
@@ -496,7 +495,7 @@ void `$INSTANCE_NAME`_GetMac( uint8_t* mac )
 uint32_t `$INSTANCE_NAME`_GetIp( void )
 {
 	uint32 ipr = 0;
-    `$INSTANCE_NAME`_Read(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, (uint8*) &ipr, 4);
+    `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, (uint8*) &ipr, 4 );
 	return ipr;
 }
 

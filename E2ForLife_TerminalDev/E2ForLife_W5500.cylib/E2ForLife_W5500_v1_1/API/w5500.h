@@ -59,6 +59,8 @@
 
 #define `$INSTANCE_NAME`_SOCKET_OPEN        ( 1 )
 #define `$INSTANCE_NAME`_SOCKET_AVAILABLE   ( 0 )
+    
+#define SIZEOF_ARRAY(x)     (sizeof(x)/sizeof(x[0]))
 
 // Macros & Function Defines
 
