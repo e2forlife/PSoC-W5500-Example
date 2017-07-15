@@ -57,6 +57,11 @@
 #define `$INSTANCE_NAME`_CS_DEASSERT    ( 1 )
 #define `$INSTANCE_NAME`_RESET_DELAY    ( 100 )
 
+enum {
+    READ_ACCESS_MODE_BIT = 0,
+    WRITE_ACCESS_MODE_BIT = 0x04
+};
+
 uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 
 /**
@@ -288,21 +293,19 @@ uint16_t `$INSTANCE_NAME`_TxBufferFree( uint8_t socket )
  */
 void `$INSTANCE_NAME`_Reset( void )
 {
-	// issue a mode register reset to the W5500 in order to set default
-	// register contents for the chip.
+	// Write 0x80 to the MR Register
 	uint8_t status = 0x80;
     
     `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_REG_MODE,
                             `$INSTANCE_NAME`_BLOCK_COMMON,
                             &status, 1 );
-    // Wait for the mode register to clear the reset bit, thus indicating
-    // that the reset command has been completed.
+    
+    // Wait for the MR register to clear the RST bit
     do {
         `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_REG_MODE,
                                `$INSTANCE_NAME`_BLOCK_COMMON,
                                &status, 1);
-    }
-    while ( (status & 0x80) != 0 );
+    } while ( (status & 0x80) != 0 );
 }
 
 /**
@@ -612,7 +615,7 @@ void `$INSTANCE_NAME`_Write( uint16_t offset, uint8_t block_select,
     while( !( `$SPI_INSTANCE`_ReadTxStatus() & `$SPI_INSTANCE`_STS_SPI_IDLE ) );
 	
 	// set write bit in the control phase data
-	block_select |= 0x04;
+	block_select |= WRITE_ACCESS_MODE_BIT;
     
 	// select the data mode based on the block length
     switch(size) {
@@ -680,8 +683,8 @@ void `$INSTANCE_NAME`_Write( uint16_t offset, uint8_t block_select,
 		CyDelay(1);
 	}
 		
-	// set write bit in the control phase data
-	block_select |= 0x04;
+	// Set write bit in the control phase data
+	block_select |= WRITE_ACCESS_MODE_BIT;
     
 	// select the data mode based on the block length
     switch(size) {
