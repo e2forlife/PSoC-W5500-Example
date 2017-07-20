@@ -153,11 +153,15 @@ uint8_t `$INSTANCE_NAME`_SocketOpen( uint16_t port, uint8_t flags )
 	// was not 0, there was an error in the command, so set the socket
 	// as available, and return 0xFF error socket to safely exit the error
 	// condition.
-    if ( 0 != `$INSTANCE_NAME`_ExecuteSocketCommand(`$INSTANCE_NAME`_CR_OPEN, socket) ) {
+    //if ( 0 != `$INSTANCE_NAME`_ExecuteSocketCommand(`$INSTANCE_NAME`_CR_OPEN, socket) ) {
+	//	`$INSTANCE_NAME`_socketStatus[socket] = `$INSTANCE_NAME`_SOCKET_AVAILABLE;
+	//	socket = 0xFF;
+	//}
+    if ( 0 != `$INSTANCE_NAME`_ExecuteSocketCommand(socket, `$INSTANCE_NAME`_CR_OPEN) ) {
 		`$INSTANCE_NAME`_socketStatus[socket] = `$INSTANCE_NAME`_SOCKET_AVAILABLE;
 		socket = 0xFF;
 	}
-	    
+    
 	return socket;
 }
 
