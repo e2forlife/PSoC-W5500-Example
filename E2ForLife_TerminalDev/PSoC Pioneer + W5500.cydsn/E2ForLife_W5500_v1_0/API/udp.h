@@ -29,26 +29,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * \file iot.h
- * \author Chuck Erhardt (chuck@e2forlife.com)
+ * @file udp.h
+ * @author Chuck Erhardt (chuck@e2forlife.com)
  * 
- * Header for the IoT Utility functions, defines macros and function
- * prototypes for use of the IoT helpers.
+ * Changes: Carlos Diaz (carlos.santiago.diaz@gmail.com) 2017
+ * Header file for the udp functions.
  */
-#ifndef ETH_UTIL_H
-#define ETH_UTIL_H
-	
+
+#ifndef `$INSTANCE_NAME`_UDP_H
+#define `$INSTANCE_NAME`_UDP_H
+
+#include <cyfitter.h>
 #include <cytypes.h>
-	
-#define IOT_IPADDRESS(x1,x2,x3,x4)   ( (uint32)(x1&0x000000FF) + (uint32)((x2<<8)&0x0000FF00) + (uint32)((x3<<16)&0x00FF0000) + ((uint32)(x4<<24)&0xFF000000 ))
 
-uint32 IOT_ParseIP( const char* ipString );
-cystatus IOT_ParseMAC(const char *macString, uint8 *mac);
-void IOT_StringMAC(uint8 *mac, char *macString);
-void IOT_StringIP( uint32 ip, char *ipString );
-int IOT_base64encode(const void* data_buf, int dataLength, char* result, int resultSize);
-int IOT_base64decode (char *in, int inLen, uint8 *out, int *outLen);
+uint8_t `$INSTANCE_NAME`_UdpOpen( uint16_t port );
+uint16_t `$INSTANCE_NAME`_UdpSend( uint8_t socket, uint32_t ip, uint16_t port, uint8_t *buffer, uint16_t len, uint8_t flags );
+uint16_t `$INSTANCE_NAME`_UdpReceive( uint8_t socket, uint8_t *header, uint8_t *buffer, uint16_t len, uint8_t flags );
 
-#endif
-/** @} */
+#endif /* `$INSTANCE_NAME`_UDP_H */
+
 /* [] END OF FILE */

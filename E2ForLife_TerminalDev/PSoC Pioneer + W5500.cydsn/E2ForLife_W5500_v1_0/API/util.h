@@ -1,5 +1,5 @@
 /**
- * \addtogroup e2forlife_w5500
+ * @addtogroup e2forlife_w5500
  * @{
  */
 /**
@@ -29,26 +29,28 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * \file iot.h
- * \author Chuck Erhardt (chuck@e2forlife.com)
+ * @file util.c
+ * @author Chuck Erhardt (chuck@e2forlife.com)
  * 
- * Header for the IoT Utility functions, defines macros and function
- * prototypes for use of the IoT helpers.
+ * Changes: Carlos Diaz (carlos.santiago.diaz@gmail.com) 2017
+ * Header file for the util functions.
  */
-#ifndef ETH_UTIL_H
-#define ETH_UTIL_H
-	
-#include <cytypes.h>
-	
-#define IOT_IPADDRESS(x1,x2,x3,x4)   ( (uint32)(x1&0x000000FF) + (uint32)((x2<<8)&0x0000FF00) + (uint32)((x3<<16)&0x00FF0000) + ((uint32)(x4<<24)&0xFF000000 ))
 
-uint32 IOT_ParseIP( const char* ipString );
-cystatus IOT_ParseMAC(const char *macString, uint8 *mac);
-void IOT_StringMAC(uint8 *mac, char *macString);
-void IOT_StringIP( uint32 ip, char *ipString );
-int IOT_base64encode(const void* data_buf, int dataLength, char* result, int resultSize);
-int IOT_base64decode (char *in, int inLen, uint8 *out, int *outLen);
+#ifndef `$INSTANCE_NAME`_UTIL_H
+#define `$INSTANCE_NAME`_UTIL_H
 
-#endif
-/** @} */
+#include <cyfitter.h>
+#include <cytypes.h> // stdint.h
+
+uint32_t `$INSTANCE_NAME`_ParseIP( const char* ipString );
+cystatus `$INSTANCE_NAME`_ParseMAC( const char* macString, uint8_t* mac );
+void `$INSTANCE_NAME`_StringMAC( uint8_t* mac, char* macString );
+void `$INSTANCE_NAME`_StringIP( uint32_t ip, char* ipString );
+int `$INSTANCE_NAME`_Base64Encode( const void* data_buf, int dataLength,
+                                   char* result, int resultSize);
+int `$INSTANCE_NAME`_Base64Decode ( char* in, int inLen, uint8_t* out, int* outLen);
+uint32_t `$INSTANCE_NAME`_IPADDRESS( const uint8_t x1, const uint8_t x2,
+                                     const uint8_t x3, const uint8_t x4 );
+
+#endif /* `$INSTANCE_NAME`_UTIL_H */
 /* [] END OF FILE */

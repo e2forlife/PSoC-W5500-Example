@@ -1,5 +1,5 @@
 /**
- * \addtogroup e2forlife_w5500
+ * @addtogroup e2forlife_w5500
  * @{
  */
 /**
@@ -29,26 +29,29 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * \file iot.h
- * \author Chuck Erhardt (chuck@e2forlife.com)
+ * @file tcp.h
+ * @author Chuck Erhardt (chuck@e2forlife.com)
  * 
- * Header for the IoT Utility functions, defines macros and function
- * prototypes for use of the IoT helpers.
+ * Changes: Carlos Diaz (carlos.santiago.diaz@gmail.com) 2017
+ * Header file for the tcp functions.
  */
-#ifndef ETH_UTIL_H
-#define ETH_UTIL_H
-	
+
+#ifndef `$INSTANCE_NAME`_TCP_H
+#define `$INSTANCE_NAME`_TCP_H
+
+#include <cyfitter.h>
 #include <cytypes.h>
-	
-#define IOT_IPADDRESS(x1,x2,x3,x4)   ( (uint32)(x1&0x000000FF) + (uint32)((x2<<8)&0x0000FF00) + (uint32)((x3<<16)&0x00FF0000) + ((uint32)(x4<<24)&0xFF000000 ))
+#include <CyLib.h>
 
-uint32 IOT_ParseIP( const char* ipString );
-cystatus IOT_ParseMAC(const char *macString, uint8 *mac);
-void IOT_StringMAC(uint8 *mac, char *macString);
-void IOT_StringIP( uint32 ip, char *ipString );
-int IOT_base64encode(const void* data_buf, int dataLength, char* result, int resultSize);
-int IOT_base64decode (char *in, int inLen, uint8 *out, int *outLen);
+cystatus `$INSTANCE_NAME`_TcpConnected( uint8_t socket );
+uint8_t `$INSTANCE_NAME`_TcpOpenClient( uint16_t port, uint32_t remote_ip, uint16_t remote_port );
+uint8_t `$INSTANCE_NAME`_TcpOpenServer( uint16_t port );
+cystatus `$INSTANCE_NAME`_TcpWaitForConnection( uint8_t socket );
+uint16_t `$INSTANCE_NAME`_TcpSend( uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags );
+void `$INSTANCE_NAME`_TcpPrint( uint8_t socket, const char* string );
+uint16_t `$INSTANCE_NAME`_TcpReceive( uint8_t socket, uint8_t* buffer, uint16_t len, uint8_t flags );
+char `$INSTANCE_NAME`_TcpGetChar( uint8_t socket );
+int `$INSTANCE_NAME`_TcpGetLine( uint8_t socket, char *buffer );
 
-#endif
-/** @} */
+#endif /* `$INSTANCE_NAME`_TCP_H */
 /* [] END OF FILE */

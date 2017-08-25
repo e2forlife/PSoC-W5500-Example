@@ -52,54 +52,15 @@
 #include "`$INSTANCE_NAME`_util.h"
 #include "`$INSTANCE_NAME`_socket.h"
 
-///**
-// * constant conversion lookup table to convert socket number
-// * to register block bank in the W5500 device.
-// */
-//const uint8 `$INSTANCE_NAME`_socket_reg[8] = {
-//	`$INSTANCE_NAME`_BLOCK_S0_REG,
-//	`$INSTANCE_NAME`_BLOCK_S1_REG,
-//	`$INSTANCE_NAME`_BLOCK_S2_REG,
-//	`$INSTANCE_NAME`_BLOCK_S3_REG,
-//	`$INSTANCE_NAME`_BLOCK_S4_REG,
-//	`$INSTANCE_NAME`_BLOCK_S5_REG,
-//	`$INSTANCE_NAME`_BLOCK_S6_REG,
-//	`$INSTANCE_NAME`_BLOCK_S7_REG
-//};
-///**
-// * constant conversion lookup table to convert socket number
-// * to TX Memory bank in the W5500 device.
-// */
-//const uint8 `$INSTANCE_NAME`_socket_tx[8] = {
-//	`$INSTANCE_NAME`_BLOCK_S0_TXB,
-//	`$INSTANCE_NAME`_BLOCK_S1_TXB,
-//	`$INSTANCE_NAME`_BLOCK_S2_TXB,
-//	`$INSTANCE_NAME`_BLOCK_S3_TXB,
-//	`$INSTANCE_NAME`_BLOCK_S4_TXB,
-//	`$INSTANCE_NAME`_BLOCK_S5_TXB,
-//	`$INSTANCE_NAME`_BLOCK_S6_TXB,
-//	`$INSTANCE_NAME`_BLOCK_S7_TXB
-//};
-///**
-// * constant conversion lookup table to convert socket number
-// * to register block bank in the W5500 device.
-// */
-//const uint8 `$INSTANCE_NAME`_socket_rx[8] = {
-//	`$INSTANCE_NAME`_BLOCK_S0_RXB,
-//	`$INSTANCE_NAME`_BLOCK_S1_RXB,
-//	`$INSTANCE_NAME`_BLOCK_S2_RXB,
-//	`$INSTANCE_NAME`_BLOCK_S3_RXB,
-//	`$INSTANCE_NAME`_BLOCK_S4_RXB,
-//	`$INSTANCE_NAME`_BLOCK_S5_RXB,
-//	`$INSTANCE_NAME`_BLOCK_S6_RXB,
-//	`$INSTANCE_NAME`_BLOCK_S7_RXB
-//};
-/* ------------------------------------------------------------------------ */
-
 #define `$INSTANCE_NAME`_CS_MASK        ( 1 << 0 )
 #define `$INSTANCE_NAME`_CS_ASSERT      ( 0 )
 #define `$INSTANCE_NAME`_CS_DEASSERT    ( 1 )
 #define `$INSTANCE_NAME`_RESET_DELAY    ( 100 )
+
+enum {
+    READ_ACCESS_MODE_BIT = 0,
+    WRITE_ACCESS_MODE_BIT = 0x04
+};
 
 uint8_t `$INSTANCE_NAME`_socketStatus[`$INSTANCE_NAME`_MAX_SOCKETS];
 
@@ -182,9 +143,7 @@ void `$INSTANCE_NAME`_Send( uint16_t offset, uint8_t block_select, uint8_t write
 	}
     
 	// Set high the chip select.
-	do {
-		status = `$SPI_INSTANCE`_ReadTxStatus() & (`$SPI_INSTANCE`_STS_SPI_IDLE|`$SPI_INSTANCE`_STS_SPI_DONE);
-	} while ( status == 0);
+    while ( 0 == (`$SPI_INSTANCE`_ReadTxStatus() & `$SPI_INSTANCE`_STS_SPI_IDLE ) );
     
 	`$CS_INSTANCE`_Write(0xFF);
 	`$SPI_INSTANCE`_ClearFIFO();
@@ -281,9 +240,13 @@ uint16_t `$INSTANCE_NAME`_RxDataReady( uint8_t socket )
     }
 
 	do {
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_RX_RSR, `$INSTANCE_NAME`_SOCKET_BASE(socket), 0, (uint8*) &first, 2);
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_RX_RSR,
+                               `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                               (uint8*) &first, 2 );
 		if ( 0 != first ) {
-			`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_RX_RSR, `$INSTANCE_NAME`_SOCKET_BASE(socket), 0,(uint8*) &second, 2);
+            `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_RX_RSR,
+                                   `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                                   (uint8*) &second, 2 );
 		}
 	} while (first != second );
 	
@@ -308,9 +271,13 @@ uint16_t `$INSTANCE_NAME`_TxBufferFree( uint8_t socket )
     }
 
 	do {
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_TX_FSR, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&first,2);
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_TX_FSR,
+                               `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                               (uint8*)&first, 2 );
 		if ( 0 != first ) {
-			`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_TX_FSR, `$INSTANCE_NAME`_SOCKET_BASE(socket),0,(uint8*)&second,2);
+            `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_TX_FSR,
+                                   `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                                   (uint8*)&second, 2 );
 		}
 	} while ( first != second );
 	
@@ -326,17 +293,19 @@ uint16_t `$INSTANCE_NAME`_TxBufferFree( uint8_t socket )
  */
 void `$INSTANCE_NAME`_Reset( void )
 {
-	// issue a mode register reset to the W5500 in order to set default
-	// register contents for the chip.
+	// Write 0x80 to the MR Register
 	uint8_t status = 0x80;
     
-	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_MODE,`$INSTANCE_NAME`_BLOCK_COMMON,1, &status, 1);
-    // Wait for the mode register to clear the reset bit, thus indicating
-	// that the reset command has been completed.
-	do {
-		`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_REG_MODE, `$INSTANCE_NAME`_BLOCK_COMMON, 0, &status, 1);
-	}
-	while ( (status & 0x80) != 0 );
+    `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_REG_MODE,
+                            `$INSTANCE_NAME`_BLOCK_COMMON,
+                            &status, 1 );
+    
+    // Wait for the MR register to clear the RST bit
+    do {
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_REG_MODE,
+                               `$INSTANCE_NAME`_BLOCK_COMMON,
+                               &status, 1);
+    } while ( (status & 0x80) != 0 );
 }
 
 /**
@@ -354,20 +323,21 @@ void `$INSTANCE_NAME`_Reset( void )
 cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t* mac, uint8_t *ip )
 {
     uint8_t socket = 0;
-	//int socket = 0;
-	uint8_t socket_cfg[14] = { `$INSTANCE_NAME`_SOCKET_MEM, `$INSTANCE_NAME`_SOCKET_MEM, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	uint8_t socket_cfg[14] = { `$INSTANCE_NAME`_SOCKET_MEM, `$INSTANCE_NAME`_SOCKET_MEM, 0x80 };
 	uint8_t config[18] = {0};
 
 	// build chip initialization from the default strings set in the configuration dialog
 	for ( socket = 0; socket < 8; ++socket ) {
 		`$INSTANCE_NAME`_socketStatus[socket] = `$INSTANCE_NAME`_SOCKET_AVAILABLE;
 		// Send socket register setup to the chip
-		`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_RXBUF_SIZE, `$INSTANCE_NAME`_SOCKET_BASE(socket), 1, &socket_cfg[0], 14);
+        `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_RXBUF_SIZE,
+                                `$INSTANCE_NAME`_SOCKET_BASE(socket),
+                                socket_cfg, SIZEOF_ARRAY(socket_cfg) );
 	}
 	
 	if ( NULL != gateway ) {
-		`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_REG_GAR, `$INSTANCE_NAME`_BLOCK_COMMON, 1, gateway, 4);
-		`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_REG_GAR, `$INSTANCE_NAME`_BLOCK_COMMON, 0, config, 4 );
+        `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_REG_GAR, `$INSTANCE_NAME`_BLOCK_COMMON, gateway, 4);
+        `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_REG_GAR, `$INSTANCE_NAME`_BLOCK_COMMON, config, 4 );
 		for ( socket = 0; (socket < 4) && ( gateway[socket] == config[socket] ); ++socket );
 		if (socket < 4) {
             return CYRET_BAD_DATA;
@@ -375,8 +345,8 @@ cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t* mac,
 	}
 	
 	if ( NULL != subnet ) {
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SUBR, `$INSTANCE_NAME`_BLOCK_COMMON, 1, subnet, 4);
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SUBR, `$INSTANCE_NAME`_BLOCK_COMMON, 0, config, 4);
+        `$INSTANCE_NAME`_Write(`$INSTANCE_NAME`_REG_SUBR, `$INSTANCE_NAME`_BLOCK_COMMON, subnet, 4);
+        `$INSTANCE_NAME`_Read(`$INSTANCE_NAME`_REG_SUBR, `$INSTANCE_NAME`_BLOCK_COMMON, config, 4);
 		for ( socket = 0; (socket < 4) && ( subnet[socket] == config[socket] ); ++socket );
 		if ( socket < 4 ) {
             return CYRET_BAD_DATA;
@@ -384,8 +354,8 @@ cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t* mac,
 	}		
 
 	if ( NULL != mac ) {
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, 1, mac, 6);
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, 0, config, 6);
+        `$INSTANCE_NAME`_Write(`$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, mac, 6);
+        `$INSTANCE_NAME`_Read(`$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, config, 6);
 		for ( socket = 0; (socket < 6) && ( mac[socket] == config[socket] ); ++socket);
 		if ( socket < 6 ) {
             return CYRET_BAD_DATA;
@@ -393,8 +363,8 @@ cystatus `$INSTANCE_NAME`_Init( uint8_t* gateway, uint8_t* subnet, uint8_t* mac,
 	}		
 
 	if ( NULL != ip ) {
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, 1, ip, 4);
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, 0, config, 4);
+        `$INSTANCE_NAME`_Write(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, ip, 4);
+        `$INSTANCE_NAME`_Read(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, config, 4);
 		for ( socket = 0; (socket < 4) && ( ip[socket] == config[socket] ); ++socket );
 		if ( socket < 4 ) {
             return CYRET_BAD_DATA;
@@ -513,7 +483,7 @@ cystatus `$INSTANCE_NAME`_StartEx( const char *gateway, const char *subnet, cons
  */
 void `$INSTANCE_NAME`_GetMac( uint8_t* mac )
 {
-	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, 0, mac, 6);
+    `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_REG_SHAR, `$INSTANCE_NAME`_BLOCK_COMMON, mac, 6 );
 }
 
 /**
@@ -528,7 +498,7 @@ void `$INSTANCE_NAME`_GetMac( uint8_t* mac )
 uint32_t `$INSTANCE_NAME`_GetIp( void )
 {
 	uint32 ipr = 0;
-	`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, 0, (uint8*) &ipr, 4);
+    `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_REG_SIPR, `$INSTANCE_NAME`_BLOCK_COMMON, (uint8*) &ipr, 4 );
 	return ipr;
 }
 
@@ -561,7 +531,7 @@ uint16_t `$INSTANCE_NAME`_GetTxLength( uint8_t socket, uint16_t len, uint8_t fla
 		// this to block until there was free space. So, check the memory
 		// size to determine if the tx buffer is big enough to handle the
 		// data block without fragmentation.
-		`$INSTANCE_NAME`_Send(`$INSTANCE_NAME`_SREG_TXBUF_SIZE, `$INSTANCE_NAME`_SOCKET_BASE( socket ), 0, &buf_size, 1);
+        `$INSTANCE_NAME`_Read(`$INSTANCE_NAME`_SREG_TXBUF_SIZE, `$INSTANCE_NAME`_SOCKET_BASE( socket ), &buf_size, 1);
 		max_packet = ( buf_size == 0 ) ? 0 : ( 0x400 << ( buf_size - 1 ) );
 		
 		// now that we know the max buffer size, if it is smaller than the
@@ -603,12 +573,12 @@ cystatus `$INSTANCE_NAME`_WriteTxData( uint8_t socket, uint8_t *buffer,
     // copied in to the W5500 buffer memory.
 	// First read the pointer, then write data from the pointer forward,
     // lastly update the pointer and issue the SEND command.
-	`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE( socket ), 0, (uint8*) &ptr, 2 );
+    `$INSTANCE_NAME`_Read( `$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE( socket ), (uint8*) &ptr, 2 );
     ptr = CYSWAP_ENDIAN16( ptr );
-	`$INSTANCE_NAME`_Send( ptr, `$INSTANCE_NAME`_TX_BASE( socket ), 1, buffer , tx_length );
+    `$INSTANCE_NAME`_Write( ptr, `$INSTANCE_NAME`_TX_BASE( socket ), buffer , tx_length );
 	ptr += tx_length;
 	ptr = CYSWAP_ENDIAN16( ptr );
-	`$INSTANCE_NAME`_Send( `$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE( socket ), 1, (uint8*) &ptr, 2 );
+    `$INSTANCE_NAME`_Write( `$INSTANCE_NAME`_SREG_TX_WR, `$INSTANCE_NAME`_SOCKET_BASE( socket ), (uint8*) &ptr, 2 );
 	
 	`$INSTANCE_NAME`_ExecuteSocketCommand( socket, `$INSTANCE_NAME`_CR_SEND );
 	result = `$INSTANCE_NAME`_SocketSendComplete( socket );
@@ -622,6 +592,321 @@ cystatus `$INSTANCE_NAME`_WriteTxData( uint8_t socket, uint8_t *buffer,
 	}
 	
 	return result;
+}
+
+/**
+ * @brief
+ *
+ *
+ *
+ * @param 
+ * @param
+ * @param
+ * @param
+ *
+ * @return
+ */
+void `$INSTANCE_NAME`_Write( uint16_t offset, uint8_t block_select,
+                             uint8_t* data, size_t size )
+{
+#if !defined(CY_SCB_`$SPI_INSTANCE`_H)
+	
+	// wait for SPI operations to complete
+    while( !( `$SPI_INSTANCE`_ReadTxStatus() & `$SPI_INSTANCE`_STS_SPI_IDLE ) );
+	
+	// set write bit in the control phase data
+	block_select |= WRITE_ACCESS_MODE_BIT;
+    
+	// select the data mode based on the block length
+    switch(size) {
+    case 1:
+        block_select |= 0x01;
+        break;
+    case 2:
+        block_select |= 0x02;
+        break;
+    case 4:
+        block_select |= 0x03;
+        break;
+    default:
+        break;
+    }
+	
+	`$CS_INSTANCE`_Write(~(`$INSTANCE_NAME`_CS_MASK));
+    
+	// send the address phase data
+	`$SPI_INSTANCE`_WriteTxData( HI8(offset) );
+	`$SPI_INSTANCE`_WriteTxData( LO8(offset) );
+    
+	// send the control phase data
+	`$SPI_INSTANCE`_WriteTxData( block_select );
+    
+	// clear data read during the previous SPI write.  FIrst, wait for data
+	// to arrive in the RX fifo (if not has yet been received), then, read the
+	// data and wait for 3 data elements to be read (the length of the header
+	// sent during the address and control phase of the protocol
+	uint8_t count = 3;
+	while ( (count != 0) || (`$SPI_INSTANCE`_GetRxBufferSize() ) ) {
+		if (`$SPI_INSTANCE`_GetRxBufferSize() ) {
+			`$SPI_INSTANCE`_ReadRxData();
+			count = (count == 0) ? 0 : count - 1;
+		}
+		CyDelayUs(5);
+	}
+	 
+	// Now that the Receive FIFO has been flushed, send data through
+	// the SPI port and wait for the receive buffer to contain data. Once the
+	// receive buffer contains data, read the data and store it in to the
+	// buffer.
+	count = 0;
+	while ( count < size ) {
+        
+		if ( `$SPI_INSTANCE`_GetTxBufferSize() < 4 ) {
+			`$SPI_INSTANCE`_WriteTxData( data[count] );
+			while ( `$SPI_INSTANCE`_GetRxBufferSize() == 0 );
+			`$SPI_INSTANCE`_ReadRxData();
+			++count;
+		}
+        
+		CyDelayUs(5);
+	}
+    
+	// Set high the chip select.
+    while ( !( `$SPI_INSTANCE`_ReadTxStatus() & `$SPI_INSTANCE`_STS_SPI_IDLE ) );
+    
+	`$CS_INSTANCE`_Write(0xFF);
+	`$SPI_INSTANCE`_ClearFIFO();
+#else // `$INSTANCE_NAME`_Send (SCB Mode)
+	
+	// wait for SPI operations to complete
+	while ( `$SPI_INSTANCE`_SpiIsBusBusy() != 0 ) {
+		CyDelay(1);
+	}
+		
+	// Set write bit in the control phase data
+	block_select |= WRITE_ACCESS_MODE_BIT;
+    
+	// select the data mode based on the block length
+    switch(size) {
+    case 1:
+        block_select |= 0x01;
+        break;
+    case 2:
+        block_select |= 0x02;
+        break;
+    case 4:
+        block_select |= 0x03;
+        break;
+    default:
+        break;
+    }
+	
+	`$CS_INSTANCE`_Write(~(`$INSTANCE_NAME`_CS_MASK));
+	// send the address phase data
+	`$SPI_INSTANCE`_SpiUartWriteTxData( HI8(offset) );
+	`$SPI_INSTANCE`_SpiUartWriteTxData( LO8(offset) );
+	// send the control phase data
+	`$SPI_INSTANCE`_SpiUartWriteTxData( block_select );
+
+	// clear data read during the previous SPI write.  FIrst, wait for data
+	// to arrive in the RX fifo (if not has yet been received), then, read the
+	// data and wait for 3 data elements to be read (the length of the header
+	// sent during the address and control phase of the protocol
+	uint8_t count = 3;
+	while ( (count != 0) || (`$SPI_INSTANCE`_SpiUartGetRxBufferSize() ) ) {
+		if (`$SPI_INSTANCE`_SpiUartGetRxBufferSize() ) {
+			`$SPI_INSTANCE`_SpiUartReadRxData();
+			count = (count == 0)? 0 : count - 1;
+		}
+		CyDelayUs(5);
+	}
+ 
+	// Now that the Receive FIFO has been flushed, send data through
+	// the SPI port and wait for the receive buffer to contain data. Once the
+	// receive buffer contains data, read the data and store it in to the
+	// buffer.
+	count = 0;
+	while ( count < size ) {
+        
+		if ( `$SPI_INSTANCE`_SpiUartGetTxBufferSize() < 4 ) {
+			`$SPI_INSTANCE`_SpiUartWriteTxData( data[count] );
+			while (`$SPI_INSTANCE`_SpiUartGetRxBufferSize() == 0);
+			`$SPI_INSTANCE`_SpiUartReadRxData();
+			++count;
+		}
+        
+		CyDelayUs(5);
+	}
+	
+	// Set high the chip select.
+	while ( `$SPI_INSTANCE`_SpiIsBusBusy() != 0 ) {
+		CyDelay(1);
+	}
+    
+	`$CS_INSTANCE`_Write(0xFF);
+	`$SPI_INSTANCE`_SpiUartClearRxBuffer();
+	`$SPI_INSTANCE`_SpiUartClearTxBuffer();
+#endif
+}
+
+/**
+ * @brief
+ *
+ *
+ *
+ * @param 
+ * @param
+ * @param
+ * @param
+ *
+ * @return
+ */
+void `$INSTANCE_NAME`_Read( uint16_t offset, uint8_t block_select, uint8_t* data, size_t size )
+{
+    // Variable Length Read to Common or Socket areas
+    // opcode is xxxx x000
+    // xxxxx is:
+    // 00000 for Common area
+    // 00001 Socket 0 register
+    // 00010 Socket 0 Tx buffer
+#if !defined(CY_SCB_`$SPI_INSTANCE`_H)
+	
+	// wait for SPI operations to complete
+    while( !( `$SPI_INSTANCE`_ReadTxStatus() & `$SPI_INSTANCE`_STS_SPI_IDLE ) );
+	
+	// set write bit in the control phase data
+	//block_select |= 0;
+    
+	// select the data mode based on the block length
+    switch(size) {
+    case 1:
+        block_select |= 0x01;
+        break;
+    case 2:
+        block_select |= 0x02;
+        break;
+    case 4:
+        block_select |= 0x03;
+        break;
+    default:
+        break;
+    }
+	
+	`$CS_INSTANCE`_Write(~(`$INSTANCE_NAME`_CS_MASK));
+    
+	// send the address phase data
+	`$SPI_INSTANCE`_WriteTxData( HI8(offset) );
+	`$SPI_INSTANCE`_WriteTxData( LO8(offset) );
+    
+	// send the control phase data
+	`$SPI_INSTANCE`_WriteTxData( block_select );
+    
+	// clear data read during the previous SPI write.  FIrst, wait for data
+	// to arrive in the RX fifo (if not has yet been received), then, read the
+	// data and wait for 3 data elements to be read (the length of the header
+	// sent during the address and control phase of the protocol
+	uint8_t count = 3;
+	while ( (count != 0) || (`$SPI_INSTANCE`_GetRxBufferSize() ) ) {
+		if (`$SPI_INSTANCE`_GetRxBufferSize() ) {
+			`$SPI_INSTANCE`_ReadRxData();
+			count = (count == 0) ? 0 : count - 1;
+		}
+		CyDelayUs(5);
+	}
+	 
+	// Now that the Receive FIFO has been flushed, send data through
+	// the SPI port and wait for the receive buffer to contain data. Once the
+	// receive buffer contains data, read the data and store it in to the
+	// buffer.
+	count = 0;
+	while ( count < size ) {
+        
+		if ( `$SPI_INSTANCE`_GetTxBufferSize() < 4 ) {
+			`$SPI_INSTANCE`_WriteTxData( 0xFF );
+			while ( `$SPI_INSTANCE`_GetRxBufferSize() == 0 );
+			data[count] = `$SPI_INSTANCE`_ReadRxData();
+			++count;
+		}
+		CyDelayUs(5);
+	}
+    
+	// Set high the chip select.
+    while ( !( `$SPI_INSTANCE`_ReadTxStatus() & `$SPI_INSTANCE`_STS_SPI_IDLE ) );
+    
+	`$CS_INSTANCE`_Write(0xFF);
+	`$SPI_INSTANCE`_ClearFIFO();
+#else // `$INSTANCE_NAME`_Send (SCB Mode)
+	
+	// wait for SPI operations to complete
+	while ( `$SPI_INSTANCE`_SpiIsBusBusy() != 0 ) {
+		CyDelay(1);
+	}
+		
+	// set write bit in the control phase data
+	//block_select |= 0;
+    
+	// select the data mode based on the block length
+    switch(size) {
+    case 1:
+        block_select |= 0x01;
+        break;
+    case 2:
+        block_select |= 0x02;
+        break;
+    case 4:
+        block_select |= 0x03;
+        break;
+    default:
+        break;
+    }
+	
+	`$CS_INSTANCE`_Write(~(`$INSTANCE_NAME`_CS_MASK));
+	// send the address phase data
+	`$SPI_INSTANCE`_SpiUartWriteTxData( HI8(offset) );
+	`$SPI_INSTANCE`_SpiUartWriteTxData( LO8(offset) );
+	// send the control phase data
+	`$SPI_INSTANCE`_SpiUartWriteTxData( block_select );
+
+	// clear data read during the previous SPI write.  FIrst, wait for data
+	// to arrive in the RX fifo (if not has yet been received), then, read the
+	// data and wait for 3 data elements to be read (the length of the header
+	// sent during the address and control phase of the protocol
+    uint8_t count = 3;
+	while ( (count != 0) || (`$SPI_INSTANCE`_SpiUartGetRxBufferSize() ) ) {
+		if (`$SPI_INSTANCE`_SpiUartGetRxBufferSize() ) {
+			`$SPI_INSTANCE`_SpiUartReadRxData();
+			count = (count == 0)? 0 : count - 1;
+		}
+		CyDelayUs(5);
+	}
+ 
+	// Now that the Receive FIFO has been flushed, send data through
+	// the SPI port and wait for the receive buffer to contain data. Once the
+	// receive buffer contains data, read the data and store it in to the
+	// buffer.
+	count = 0;
+	while ( count < size ) {
+		
+		if ( `$SPI_INSTANCE`_SpiUartGetTxBufferSize() < 4 ) {
+            
+			`$SPI_INSTANCE`_SpiUartWriteTxData( 0xFF );
+			while (`$SPI_INSTANCE`_SpiUartGetRxBufferSize() == 0);
+			data[count] = `$SPI_INSTANCE`_SpiUartReadRxData();
+			++count;
+		}
+        
+		CyDelayUs(5);
+	}
+	
+	// Set high the chip select.
+	while ( `$SPI_INSTANCE`_SpiIsBusBusy() != 0 ) {
+		CyDelay(1);
+	}
+    
+	`$CS_INSTANCE`_Write(0xFF);
+	`$SPI_INSTANCE`_SpiUartClearRxBuffer();
+	`$SPI_INSTANCE`_SpiUartClearTxBuffer();
+#endif
 }
 
 /** @} */
